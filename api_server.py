@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 """
-FastAPI server for Semiconductor Trade Monitor
+API server for Semiconductor Trade Monitor
 Provides REST API endpoints and basic anomaly detection
+Supports both SQLite and MySQL databases
 """
 
-import sqlite3
 import json
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
+
+# Import database configuration
+from config.database import db_config
 
 # For now, simulate FastAPI with a simple class structure
 # In production, would use: from fastapi import FastAPI, HTTPException, Query
@@ -36,13 +44,8 @@ class AnomalyAlert:
     severity: str
 
 class SemiconductorAPI:
-    def __init__(self, db_path="semiconductor_trade.db"):
-        self.db_path = db_path
+    def __init__(self):
         self.anomaly_threshold = 20.0  # 20% change threshold from PRD
-    
-    def get_database_connection(self):
-        """Get database connection"""
-        return sqlite3.connect(self.db_path)
     
     def get_trade_series(self, commodity: Optional[str] = None, 
                         reporter: Optional[str] = None,
@@ -53,9 +56,6 @@ class SemiconductorAPI:
         Get trade time series data with optional filters
         Endpoint: /v1/series?commodity=HBM&origin=KOR&dest=TWN
         """
-        
-        conn = self.get_database_connection()
-        cursor = conn.cursor()
         
         # Build query with filters
         query = """
@@ -78,44 +78,71 @@ class SemiconductorAPI:
         params = []
         
         if commodity:
-            query += " AND hs.description LIKE ?"
+            if db_config.db_type == 'mysql':
+                query += " AND hs.description LIKE %s"
+            else:
+                query += " AND hs.description LIKE ?"
             params.append(f"%{commodity}%")
         
         if reporter:
-            query += " AND c1.name LIKE ?"
+            if db_config.db_type == 'mysql':
+                query += " AND c1.name LIKE %s"
+            else:
+                query += " AND c1.name LIKE ?"
             params.append(f"%{reporter}%")
         
         if partner:
-            query += " AND c2.name LIKE ?"
+            if db_config.db_type == 'mysql':
+                query += " AND c2.name LIKE %s"
+            else:
+                query += " AND c2.name LIKE ?"
             params.append(f"%{partner}%")
         
         if start_period:
-            query += " AND tf.period >= ?"
+            if db_config.db_type == 'mysql':
+                query += " AND tf.period >= %s"
+            else:
+                query += " AND tf.period >= ?"
             params.append(start_period)
         
         if end_period:
-            query += " AND tf.period <= ?"
+            if db_config.db_type == 'mysql':
+                query += " AND tf.period <= %s"
+            else:
+                query += " AND tf.period <= ?"
             params.append(end_period)
         
         query += " ORDER BY tf.period, tf.value_usd DESC"
         
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
-        conn.close()
+        rows = db_config.execute_query(query, tuple(params), fetch='all')
         
         # Convert to TradeRecord objects
         records = []
         for row in rows:
-            records.append(TradeRecord(
-                period=row[0],
-                reporter=row[1],
-                partner=row[2], 
-                commodity=row[3],
-                hs6=row[4],
-                value_usd=row[5],
-                quantity=row[6],
-                unit=row[7]
-            ))
+            if isinstance(row, dict):
+                # MySQL returns dict
+                records.append(TradeRecord(
+                    period=row['period'],
+                    reporter=row['reporter'],
+                    partner=row['partner'], 
+                    commodity=row['commodity'],
+                    hs6=row['hs6'],
+                    value_usd=float(row['value_usd']) if row['value_usd'] else 0,
+                    quantity=float(row['quantity']) if row['quantity'] else 0,
+                    unit=row['unit']
+                ))
+            else:
+                # SQLite returns tuple
+                records.append(TradeRecord(
+                    period=row[0],
+                    reporter=row[1],
+                    partner=row[2], 
+                    commodity=row[3],
+                    hs6=row[4],
+                    value_usd=float(row[5]) if row[5] else 0,
+                    quantity=float(row[6]) if row[6] else 0,
+                    unit=row[7]
+                ))
         
         return records
     
@@ -125,15 +152,17 @@ class SemiconductorAPI:
         Returns anomaly alerts for significant changes
         """
         
-        conn = self.get_database_connection()
-        cursor = conn.cursor()
-        
         # Get trade data grouped by period, commodity, and route
-        cursor.execute("""
+        if db_config.db_type == 'mysql':
+            concat_clause = "CONCAT(c1.name, ' → ', c2.name)"
+        else:
+            concat_clause = "c1.name || ' → ' || c2.name"
+        
+        query = f"""
             SELECT 
                 tf.period,
                 hs.description as commodity,
-                c1.name || ' → ' || c2.name as trade_route,
+                {concat_clause} as trade_route,
                 SUM(tf.value_usd) as total_value
             FROM trade_flows tf
             JOIN countries c1 ON tf.reporter_iso = c1.iso3
@@ -141,14 +170,19 @@ class SemiconductorAPI:
             JOIN hs_codes hs ON tf.hs6 = hs.hs6
             GROUP BY tf.period, hs.description, trade_route
             ORDER BY tf.period, total_value DESC
-        """)
+        """
         
-        rows = cursor.fetchall()
-        conn.close()
+        rows = db_config.execute_query(query, fetch='all')
         
         # Organize data by commodity and route
         trade_series = {}
-        for period, commodity, route, value in rows:
+        for row in rows:
+            if isinstance(row, dict):
+                # MySQL returns dict
+                period, commodity, route, value = row['period'], row['commodity'], row['trade_route'], row['total_value']
+            else:
+                # SQLite returns tuple
+                period, commodity, route, value = row
             key = f"{commodity}|{route}"
             if key not in trade_series:
                 trade_series[key] = {}
@@ -190,41 +224,39 @@ class SemiconductorAPI:
     def get_summary_stats(self) -> Dict[str, Any]:
         """Get summary statistics for the dashboard"""
         
-        conn = self.get_database_connection()
-        cursor = conn.cursor()
-        
         # Basic counts
-        cursor.execute("SELECT COUNT(*) FROM trade_flows")
-        total_records = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT SUM(value_usd) FROM trade_flows")
-        total_value = cursor.fetchone()[0] or 0
-        
-        cursor.execute("SELECT COUNT(DISTINCT hs6) FROM trade_flows")
-        unique_commodities = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT MAX(period) FROM trade_flows")
-        latest_period = cursor.fetchone()[0]
+        total_records = db_config.execute_query("SELECT COUNT(*) as count FROM trade_flows", fetch='one')
+        total_value = db_config.execute_query("SELECT SUM(value_usd) as total FROM trade_flows", fetch='one')
+        unique_commodities = db_config.execute_query("SELECT COUNT(DISTINCT hs6) as count FROM trade_flows", fetch='one')
+        latest_period = db_config.execute_query("SELECT MAX(period) as period FROM trade_flows", fetch='one')
         
         # Top commodities
-        cursor.execute("""
+        top_commodities_query = """
             SELECT hs.description, SUM(tf.value_usd) as total_value
             FROM trade_flows tf
             JOIN hs_codes hs ON tf.hs6 = hs.hs6
             GROUP BY hs.description
             ORDER BY total_value DESC
             LIMIT 3
-        """)
-        top_commodities = cursor.fetchall()
+        """
+        top_commodities_rows = db_config.execute_query(top_commodities_query, fetch='all')
         
-        conn.close()
+        # Format top commodities
+        top_commodities = []
+        for row in top_commodities_rows:
+            if isinstance(row, dict):
+                # MySQL returns dict
+                top_commodities.append({"name": row['description'], "value": float(row['total_value'])})
+            else:
+                # SQLite returns tuple
+                top_commodities.append({"name": row[0], "value": float(row[1])})
         
         return {
-            "total_records": total_records,
-            "total_value": total_value,
-            "unique_commodities": unique_commodities,
-            "latest_period": latest_period,
-            "top_commodities": [{"name": name, "value": value} for name, value in top_commodities]
+            "total_records": total_records['count'] if isinstance(total_records, dict) else total_records[0],
+            "total_value": float(total_value['total'] or 0) if isinstance(total_value, dict) else float(total_value[0] or 0),
+            "unique_commodities": unique_commodities['count'] if isinstance(unique_commodities, dict) else unique_commodities[0],
+            "latest_period": latest_period['period'] if isinstance(latest_period, dict) else latest_period[0],
+            "top_commodities": top_commodities
         }
     
     def test_api_endpoints(self):

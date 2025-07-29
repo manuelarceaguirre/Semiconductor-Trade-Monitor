@@ -1,26 +1,32 @@
 #!/usr/bin/env python3
 """
-Streamlit Dashboard for Semiconductor Trade Monitor MVP
+Streamlit Dashboard for Semiconductor Trade Monitor
 Interactive visualizations for semiconductor trade flows
+Supports both SQLite and MySQL databases
 """
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import sqlite3
 import json
 from datetime import datetime
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
+
+# Import database configuration
+from config.database import db_config
 
 class SemiconductorDashboard:
-    def __init__(self, db_path="semiconductor_trade.db"):
-        self.db_path = db_path
+    def __init__(self):
+        pass
     
     def load_data_from_db(self):
-        """Load trade data from SQLite database"""
+        """Load trade data from database"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            
             query = """
                 SELECT 
                     tf.period,
@@ -38,9 +44,25 @@ class SemiconductorDashboard:
                 ORDER BY tf.period DESC, tf.value_usd DESC
             """
             
-            df = pd.read_sql_query(query, conn)
-            conn.close()
-            return df
+            rows = db_config.execute_query(query, fetch='all')
+            
+            # Convert to DataFrame
+            if rows:
+                if isinstance(rows[0], dict):
+                    # MySQL returns dict
+                    df = pd.DataFrame(rows)
+                else:
+                    # SQLite returns tuple, convert to DataFrame
+                    columns = ['period', 'reporter', 'partner', 'commodity', 'hs6', 'value_usd', 'quantity', 'unit']
+                    df = pd.DataFrame(rows, columns=columns)
+                
+                # Ensure numeric columns are proper types
+                df['value_usd'] = pd.to_numeric(df['value_usd'], errors='coerce')
+                df['quantity'] = pd.to_numeric(df['quantity'], errors='coerce')
+                
+                return df
+            else:
+                return pd.DataFrame()
             
         except Exception as e:
             st.error(f"Database connection error: {e}")
