@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta charset="utf-8"/>
+    <title>Semiconductor Trade Monitor - 3D Globe (Standalone)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            overflow: hidden;
+            font-family: 'Roboto', Arial, Helvetica, sans-serif;
+            user-select: none;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 100%);
+            height: 100%;
+        }
+
+        canvas {
+            outline: none;
+            display: block;
+        }
+
+        #title {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 24px;
+            font-weight: 300;
+            text-align: center;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 30px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        #title .subtitle {
+            font-size: 14px;
+            color: #00d4ff;
+            margin-top: 5px;
+        }
+
+        #info-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 1000;
+            display: none;
+        }
+
+        #status {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            z-index: 1000;
+        }
+
+        .status-online { color: #4CAF50; }
+        .status-demo { color: #FF9800; }
+    </style>
+</head>
+<body>
+    <div id="title">
+        <div>Semiconductor Trade Monitor</div>
+        <div class="subtitle">3D Globe Visualization (Demo Mode)</div>
+    </div>
+
+    <div id="info-panel">
+        <h3>Trade Flow Details</h3>
+        <div id="info-content"></div>
+    </div>
+
+    <div id="status">
+        <div><span class="status-demo">●</span> Demo Mode - Using Sample Data</div>
+        <div>Major Trade Routes:</div>
+        <div>• South Korea → Taiwan (HBM/DRAM): $2.5B</div>
+        <div>• Taiwan → USA (GPUs): $3.2B</div>
+        <div>• Netherlands → Taiwan (Lithography): $1.8B</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // Basic Three.js setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+        
+        // Camera position
+        camera.position.set(-2, 1, -1);
+        
+        // Controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.minDistance = 1;
+        controls.enableDamping = true;
+        
+        // Lights
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.75);
+        directionalLight.position.set(1, 2, 0);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+        scene.add(directionalLight, ambientLight);
+        
+        // Create Earth globe
+        const earthGeometry = new THREE.SphereGeometry(1, 64, 32);
+        const earthMaterial = new THREE.MeshStandardMaterial({
+            color: 0x2233aa,
+            transparent: true,
+            opacity: 0.8
+        });
+        const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+        scene.add(earth);
+        
+        // Sample trade routes data
+        const tradeRoutes = [
+            {
+                from: { country: "South Korea", lat: 37.5665, lng: 126.9780 },
+                to: { country: "Taiwan", lat: 23.8103, lng: 120.9675 },
+                value: 2.5,
+                commodity: "HBM/DRAM"
+            },
+            {
+                from: { country: "Taiwan", lat: 23.8103, lng: 120.9675 },
+                to: { country: "USA", lat: 39.8283, lng: -98.5795 },
+                value: 3.2,
+                commodity: "GPUs"
+            },
+            {
+                from: { country: "Netherlands", lat: 52.1326, lng: 5.2913 },
+                to: { country: "Taiwan", lat: 23.8103, lng: 120.9675 },
+                value: 1.8,
+                commodity: "Lithography Tools"
+            }
+        ];
+        
+        // Convert lat/lng to 3D coordinates
+        function latLngToVector3(lat, lng, radius = 1) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lng + 180) * (Math.PI / 180);
+            
+            const x = -(radius * Math.sin(phi) * Math.cos(theta));
+            const y = radius * Math.cos(phi);
+            const z = radius * Math.sin(phi) * Math.sin(theta);
+            
+            return new THREE.Vector3(x, y, z);
+        }
+        
+        // Create trade flow visualization
+        const tradeFlowGroup = new THREE.Group();
+        scene.add(tradeFlowGroup);
+        
+        tradeRoutes.forEach((route, index) => {
+            const fromPos = latLngToVector3(route.from.lat, route.from.lng);
+            const toPos = latLngToVector3(route.to.lat, route.to.lng);
+            
+            // Create curved line
+            const midPoint = new THREE.Vector3().addVectors(fromPos, toPos).multiplyScalar(0.5);
+            midPoint.normalize().multiplyScalar(1.3); // Raise above surface
+            
+            const curve = new THREE.CatmullRomCurve3([fromPos, midPoint, toPos]);
+            const geometry = new THREE.TubeGeometry(curve, 20, 0.01, 8, false);
+            
+            // Color based on value
+            const intensity = route.value / 3.2; // Normalize to max value
+            const color = new THREE.Color().setHSL(0.6 - (intensity * 0.4), 0.8, 0.5 + (intensity * 0.3));
+            
+            const material = new THREE.MeshStandardMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.8,
+                emissive: color,
+                emissiveIntensity: 0.2
+            });
+            
+            const tube = new THREE.Mesh(geometry, material);
+            tube.userData = { route: route, index: index };
+            tradeFlowGroup.add(tube);
+        });
+        
+        // Add country markers
+        tradeRoutes.forEach(route => {
+            [route.from, route.to].forEach(location => {
+                const pos = latLngToVector3(location.lat, location.lng, 1.05);
+                const markerGeometry = new THREE.SphereGeometry(0.02, 16, 16);
+                const markerMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xff4444,
+                    emissive: 0xff4444,
+                    emissiveIntensity: 0.3
+                });
+                const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+                marker.position.copy(pos);
+                marker.userData = { location: location };
+                scene.add(marker);
+            });
+        });
+        
+        // Mouse interaction
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(tradeFlowGroup.children);
+            
+            if (intersects.length > 0) {
+                const route = intersects[0].object.userData.route;
+                const infoPanel = document.getElementById('info-panel');
+                const infoContent = document.getElementById('info-content');
+                
+                infoContent.innerHTML = `
+                    <p><strong>Route:</strong> ${route.from.country} → ${route.to.country}</p>
+                    <p><strong>Commodity:</strong> ${route.commodity}</p>
+                    <p><strong>Value:</strong> $${route.value}B</p>
+                    <p><strong>Status:</strong> Active Trade Flow</p>
+                `;
+                infoPanel.style.display = 'block';
+                renderer.domElement.style.cursor = 'pointer';
+            } else {
+                document.getElementById('info-panel').style.display = 'none';
+                renderer.domElement.style.cursor = 'default';
+            }
+        }
+        
+        window.addEventListener('mousemove', onMouseMove);
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            controls.update();
+            
+            // Rotate earth slowly
+            earth.rotation.y += 0.001;
+            
+            // Animate trade flows
+            const time = Date.now() * 0.001;
+            tradeFlowGroup.children.forEach((tube, index) => {
+                const intensity = 0.2 + 0.3 * Math.sin(time * 2 + index);
+                tube.material.emissiveIntensity = intensity;
+            });
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Handle window resize
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize);
+        
+        // Start animation
+        animate();
+        
+        console.log('3D Globe loaded with sample semiconductor trade data');
+    </script>
+</body>
+</html>

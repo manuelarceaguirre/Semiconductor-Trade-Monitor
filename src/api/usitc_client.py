@@ -12,6 +12,7 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
+from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 
 # Load environment variables
 load_dotenv()
@@ -21,17 +22,26 @@ class USITCAPIClient:
     
     def __init__(self):
         self.api_token = os.getenv('USITC_API_TOKEN')
-        self.base_url = "https://datawebws.usitc.gov/dataweb"
-        self.rate_limit = None  # No documented rate limits for USITC
+        self.base_url = "https://datawebws.usitc.gov"
+        self.rate_limit_delay = 30.0  # Very conservative: 30 seconds between requests
+        self.last_request_time = 0
         
-        # US HTS codes mapping to our HS codes
+        # Verified US HTS codes from research (10-digit)
         self.target_hts_codes = {
-            # HTS codes are more detailed than HS codes
-            "8542321000": "HBM/DRAM Memory", 
-            "8542311000": "GPU Processors",
-            "8542319000": "Other Processors",
-            "8486203000": "Lithography Equipment",
-            "8542900000": "Other Semiconductor Parts"
+            # 854231 series (Processors/controllers)
+            "8542310045": "Central Processing Units (CPUs)",
+            "8542310040": "Graphics Processing Units (GPUs)", 
+            "8542310060": "Field-Programmable Gate Arrays (FPGAs)",
+            "8542310035": "Digital Signal Processors (DSPs)",
+            # 854232 series (Memory chips)
+            "8542320036": "DRAM Memory >1 Gigabit",
+            "8542320041": "Static RAM (SRAM)",
+            "8542320071": "Other Memory (Flash/NAND)",
+            # 8486 series (Manufacturing equipment)
+            "8486200000": "Semiconductor Manufacturing Equipment",
+            "8486900000": "Semiconductor Equipment Parts",
+            # 9030 series (Test equipment)
+            "9030820000": "Semiconductor Testing Equipment"
         }
         
         # Key trading partners for US
@@ -47,6 +57,42 @@ class USITCAPIClient:
             "Netherlands": "NL",
             "Germany": "DE"
         }
+    
+    def _enforce_rate_limit(self):
+        """Enforce very conservative rate limiting (5+ seconds between requests)"""
+        current_time = time.time()
+        time_since_last = current_time - self.last_request_time
+        
+        if time_since_last < self.rate_limit_delay:
+            sleep_time = self.rate_limit_delay - time_since_last
+            print(f"USITC rate limiting: sleeping {sleep_time:.1f}s")
+            time.sleep(sleep_time)
+        
+        self.last_request_time = time.time()
+    
+    @retry(
+        retry=retry_if_exception_type(requests.exceptions.HTTPError),
+        wait=wait_exponential(multiplier=1, min=1, max=60),
+        stop=stop_after_attempt(5)
+    )
+    def _make_request_with_backoff(self, url: str, headers: Dict, payload: Dict) -> requests.Response:
+        """Make HTTP request with exponential backoff for 429 errors"""
+        self._enforce_rate_limit()
+        
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        
+        if response.status_code == 429:
+            print(f"Rate limit hit (429), will retry with exponential backoff...")
+            # Check for Retry-After header
+            retry_after = response.headers.get('Retry-After')
+            if retry_after:
+                sleep_time = int(retry_after)
+                print(f"Retry-After header found: sleeping {sleep_time}s")
+                time.sleep(sleep_time)
+            raise requests.exceptions.HTTPError(f"429 Rate Limited", response=response)
+        
+        response.raise_for_status()
+        return response
     
     def get_trade_data(self,
                       hts_code: str = "8542900000",
@@ -73,11 +119,15 @@ class USITCAPIClient:
         if not self.api_token:
             raise ValueError("USITC_API_TOKEN not found in environment variables")
         
-        # Build API endpoint URL
-        endpoint = f"{self.base_url}/api/v2/report2/runReport"
+        # Use the correct endpoint found through testing
+        if not hasattr(self, 'working_endpoint'):
+            self.working_endpoint = f"{self.base_url}/dataweb/api/v2/report2/runReport"
+        
+        endpoint = self.working_endpoint
+        print(f"DEBUG: Using endpoint: {endpoint}")
         
         # Build the query payload for USITC DataWeb API
-        # This structure is based on the official API documentation
+        # Simplified payload structure for testing
         query_payload = {
             "reportName": "TradeQuery",
             "format": "JSON",
@@ -91,6 +141,8 @@ class USITCAPIClient:
                 }
             }
         }
+        
+        print(f"DEBUG: Request payload: {json.dumps(query_payload, indent=2)}")
         
         # Add partner country filter if specified
         if partner_country:
@@ -107,8 +159,8 @@ class USITCAPIClient:
         try:
             print(f"Requesting US {trade_flow}: {hts_code} from {partner_country or 'all partners'} ({start_year}-{end_year})")
             
-            response = requests.post(endpoint, json=query_payload, headers=headers, timeout=30)
-            response.raise_for_status()
+            # Use rate-limited request with exponential backoff
+            response = self._make_request_with_backoff(endpoint, headers, query_payload)
             
             data = response.json()
             
@@ -142,7 +194,8 @@ class USITCAPIClient:
             
         except requests.exceptions.RequestException as e:
             print(f"USITC API request failed: {e}")
-            if hasattr(e.response, 'text'):
+            if hasattr(e, 'response') and e.response is not None:
+                print(f"Status code: {e.response.status_code}")
                 print(f"Response content: {e.response.text}")
             return {"error": str(e), "data": []}
         except json.JSONDecodeError as e:
@@ -150,6 +203,12 @@ class USITCAPIClient:
             return {"error": "Invalid JSON response", "data": []}
         except Exception as e:
             print(f"Unexpected error: {e}")
+            # Check if it's a tenacity RetryError with more details
+            if hasattr(e, 'last_attempt') and hasattr(e.last_attempt, 'exception'):
+                inner_exception = e.last_attempt.exception()
+                if hasattr(inner_exception, 'response') and inner_exception.response is not None:
+                    print(f"Inner exception status: {inner_exception.response.status_code}")
+                    print(f"Inner exception response: {inner_exception.response.text}")
             return {"error": str(e), "data": []}
     
     def get_us_semiconductor_imports(self, 
@@ -170,12 +229,13 @@ class USITCAPIClient:
         
         print(f"Fetching US semiconductor imports for {year}...")
         
-        # Priority HTS codes for semiconductors
+        # Priority HTS codes for semiconductors (verified from research)
         priority_codes = [
-            "8542321000",  # DRAM Memory
-            "8542311000",  # GPU Processors
-            "8542319000",  # Other Processors  
-            "8542900000",  # Other Semiconductor Parts
+            "8542310045",  # Central Processing Units (CPUs)
+            "8542310040",  # Graphics Processing Units (GPUs)
+            "8542320036",  # DRAM Memory >1 Gigabit
+            "8542320071",  # Other Memory (Flash/NAND)
+            "8486200000",  # Semiconductor Manufacturing Equipment
         ]
         
         # Get data for each HTS code
@@ -204,8 +264,7 @@ class USITCAPIClient:
                 else:
                     print(f"✗ No data for {description}")
                     
-                # Small delay to be respectful
-                time.sleep(0.5)
+                # Rate limiting handled by _make_request_with_backoff
                 
             except Exception as e:
                 print(f"Error fetching {hts_code}: {e}")
@@ -294,7 +353,7 @@ class USITCAPIClient:
                 except Exception as e:
                     print(f"Error fetching imports for {hts_code}: {e}")
             
-            time.sleep(0.3)  # Be respectful to the API
+            # Rate limiting handled by _make_request_with_backoff
         
         # Calculate total trade value
         total_value = 0
@@ -320,38 +379,60 @@ class USITCAPIClient:
                 "error": "No USITC API token found in environment variables"
             }
         
-        # Simple test request - US semiconductor imports from Taiwan
+        print(f"Token present: {self.api_token[:20]}...")
+        
+        # Test basic connectivity first
         try:
-            result = self.get_trade_data(
-                hts_code="8542900000",  # Broad semiconductor category
-                trade_flow="imports",
-                partner_country="TW",   # Taiwan
-                start_year=2022,
-                end_year=2022,
-                frequency="annual"
-            )
-            
-            if result.get("success"):
-                count = result.get("count", 0)
-                print(f"✓ USITC API connection successful - found {count} records")
-                return {
-                    "success": True,
-                    "records_found": count,
-                    "sample_data": result.get("data", [])[:2]  # First 2 records
-                }
-            else:
-                print(f"✗ USITC API request failed: {result.get('error')}")
-                return {
-                    "success": False,
-                    "error": result.get("error")
-                }
-                
+            print("Testing basic server connectivity...")
+            response = requests.get("https://dataweb.usitc.gov", timeout=10)
+            print(f"Base server response: {response.status_code}")
         except Exception as e:
-            print(f"✗ USITC API test failed: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            print(f"Base server test failed: {e}")
+        
+        # Try alternative API endpoints based on research
+        test_endpoints = [
+            f"{self.base_url}/api/v2/report2/runReport",
+            f"{self.base_url}/api/v1/report/runReport", 
+            f"{self.base_url}/dataweb/api/v2/report2/runReport",
+            "https://datawebapi.usitc.gov/api/v2/report2/runReport"
+        ]
+        
+        for endpoint in test_endpoints:
+            print(f"\nTrying endpoint: {endpoint}")
+            try:
+                # Set the endpoint to test
+                self.working_endpoint = endpoint
+                
+                # Simple test request - US semiconductor imports from Taiwan
+                result = self.get_trade_data(
+                    hts_code="8542310040",  # GPUs (verified HTS code)
+                    trade_flow="imports",
+                    partner_country="TW",   # Taiwan
+                    start_year=2022,
+                    end_year=2022,
+                    frequency="annual"
+                )
+                
+                if result.get("success"):
+                    print(f"✓ SUCCESS with endpoint: {endpoint}")
+                    count = result.get("count", 0)
+                    return {
+                        "success": True,
+                        "records_found": count,
+                        "sample_data": result.get("data", [])[:2],  # First 2 records
+                        "working_endpoint": endpoint
+                    }
+                else:
+                    print(f"✗ Failed with endpoint: {endpoint} - {result.get('error')}")
+                    
+            except Exception as e:
+                print(f"✗ Exception with endpoint: {endpoint} - {e}")
+                continue
+        
+        return {
+            "success": False,
+            "error": "All API endpoints failed - API may not be accessible or authentication issues"
+        }
 
 if __name__ == "__main__":
     # Test the USITC API client

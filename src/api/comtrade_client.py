@@ -8,11 +8,11 @@ Uses the official comtradeapicall library
 import time
 import json
 import pandas as pd
+import requests
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
-import comtradeapicall
 
 # Load environment variables
 load_dotenv()
@@ -28,18 +28,20 @@ class ComtradeAPIClient:
         self.request_count = 0
         self.request_window_start = time.time()
         
-        # Semiconductor HS codes we're monitoring
+        # Semiconductor HS codes we're monitoring (from research)
         self.target_hs_codes = {
-            "854232": "HBM/DRAM/SRAM ICs",
-            "854231": "GPU/AI Accelerators", 
-            "848620": "Lithography Tools"
+            "854231": "Electronic integrated circuits: Processors and controllers",
+            "854232": "Electronic integrated circuits: Memory (DRAM, flash)",
+            "854233": "Electronic integrated circuits: Amplifiers", 
+            "854239": "Electronic integrated circuits: Other",
+            "8542": "Electronic integrated circuits (aggregate)"
         }
         
-        # Key trading countries/regions  
+        # Key trading countries/regions (UN M49 codes from research)
         self.key_countries = {
             "KOR": 410,  # South Korea
-            "TWN": 158,  # Taiwan
-            "USA": 842,  # United States
+            "TWN": 490,  # Taiwan (Other Asia, nes)
+            "USA": 842,  # United States  
             "CHN": 156,  # China
             "JPN": 392,  # Japan
             "NLD": 528,  # Netherlands
@@ -74,6 +76,108 @@ class ComtradeAPIClient:
         
         self.last_request_time = time.time()
         self.request_count += 1
+    
+    def get_bilateral_flows(self, reporter_code: str, partner_code: str, 
+                           hs_code: str, year: str = "2023", 
+                           flow_type: str = "2") -> Dict[str, Any]:
+        """
+        Get bilateral trade flows using correct UN Comtrade API parameters from research
+        
+        Args:
+            reporter_code: UN M49 code for reporting country (e.g. "490" for Taiwan)
+            partner_code: UN M49 code for partner country (e.g. "842" for USA)
+            hs_code: HS commodity code (e.g. "854232" for memory chips)
+            year: Year as string (e.g. "2023")
+            flow_type: "1" for imports (reporter imports from partner), "2" for exports
+        
+        Returns:
+            Dictionary with success status and trade data
+        """
+        
+        self._wait_for_rate_limit()
+        
+        # Use new Comtrade API v1 endpoint and parameters
+        url = f"https://comtradeapi.un.org/data/v1/get/C/A/HS"
+        
+        # New API format: different parameter structure
+        params = {
+            "reporterCode": reporter_code,
+            "partnerCode": partner_code,
+            "cmdCode": hs_code,
+            "flowCode": "X" if flow_type == "2" else "M",  # X=exports, M=imports
+            "period": year,
+            "motCode": "0",  # Mode of transport (0=all)
+            "partner2Code": "0",  # Second partner (0=none)
+            "customsCode": "C00",  # Customs procedure (C00=all)
+            "freq": "A",  # Annual
+            "aggregateBy": "none",
+            "breakdownMode": "classic",
+            "includeDesc": "true"
+        }
+        
+        # Add API key in headers (not params)
+        headers = {}
+        if self.api_key:
+            headers["Ocp-Apim-Subscription-Key"] = self.api_key
+        
+        try:
+            print(f"Requesting bilateral flow: {hs_code} from {reporter_code} to {partner_code} ({year})")
+            
+            response = requests.get(url, params=params, headers=headers, timeout=30)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            # Check for API errors in new format
+            if "data" not in data:
+                return {
+                    "success": False,
+                    "error": f"No data in response: {data}",
+                    "data": []
+                }
+            
+            dataset = data.get("data", [])
+            
+            # Process results with new API response format
+            processed_data = []
+            for record in dataset:
+                processed_record = {
+                    "period": record.get("period"),
+                    "reporter_code": record.get("reporterCode"),
+                    "reporter_name": record.get("reporterDesc", "Unknown"),
+                    "partner_code": record.get("partnerCode"), 
+                    "partner_name": record.get("partnerDesc", "Unknown"),
+                    "commodity_code": record.get("cmdCode"),
+                    "commodity_name": record.get("cmdDesc", "Unknown"),
+                    "trade_value_usd": record.get("primaryValue", 0),  # primaryValue in new API
+                    "quantity": record.get("qty", 0),
+                    "unit": record.get("qtUnit", ""),
+                    "flow_desc": record.get("flowDesc", ""),
+                    "flow_code": record.get("flowCode")
+                }
+                processed_data.append(processed_record)
+            
+            return {
+                "success": True,
+                "count": len(processed_data),
+                "data": processed_data,
+                "raw_response": data
+            }
+            
+        except requests.exceptions.RequestException as e:
+            print(f"UN Comtrade API request failed: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "data": []
+            }
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return {
+                "success": False, 
+                "error": str(e),
+                "data": []
+            }
     
     def get_trade_data(self, 
                       typeCode: str = "C",  # C=commodities, S=services

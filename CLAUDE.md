@@ -27,7 +27,7 @@
 ### ✅ **FULLY OPERATIONAL FEATURES**
 - **🌐 3D Globe Visualization** - Interactive Three.js globe with real-time animated trade flows
 - **⚡ FastAPI 2.0.0 Server** - Production REST API with comprehensive validation
-- **🗄️ MySQL 8.0 Database** - Production database with connection pooling
+- **🗄️ SQLite Database** - Local development database (MySQL ready for production scaling)
 - **📡 Real API Integrations** - UN Comtrade, USITC DataWeb, FRED APIs
 - **🎯 Live Trade Flow Animation** - Real-time curved arcs with moving particles ($500M+ filter)
 - **📊 Real-time Analytics** - Live anomaly detection and economic indicators (ready)
@@ -46,7 +46,7 @@
   - Ready for anomaly visualization and interactive controls overlay
 
 ### 📈 **Production Metrics**
-- **Total Trade Value**: $6.5B+ processed through MySQL database
+- **Total Trade Value**: $6.5B+ processed through SQLite database
 - **UN Comtrade Integration**: $112.8B+ semiconductor trade data
 - **Economic Indicators**: 7 real-time FRED indicators (GDP, NASDAQ, etc.)
 - **API Response Time**: < 500ms for all endpoints
@@ -83,7 +83,7 @@ semiconductormonitor/
 ## 🔧 **Production Tech Stack**
 
 - **Language**: Python 3.12
-- **Database**: MySQL 8.0 with connection pooling
+- **Database**: SQLite (development) with MySQL abstraction layer ready
 - **API Framework**: FastAPI 2.0.0 with Pydantic validation
 - **3D Visualization**: Three.js with GeoJSON loader
 - **Frontend**: Interactive HTML5 with ES6 modules
