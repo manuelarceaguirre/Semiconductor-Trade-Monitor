@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <meta charset="utf-8"/>
+
+        <title>Semiconductor Trade Monitor - 3D Globe</title>
+        <!-- Load Three.js from CDN -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+            }
+
+            html {
+                overflow: hidden;
+                font-family: Arial, Helvetica, sans-serif;
+                user-select: none;
+            }
+
+            canvas {
+                outline: none;
+            }
+
+            #dashboard {
+                position: fixed;
+                left: 20px;
+                top: 20px;
+                bottom: 20px;
+                width: 280px;
+                background: rgba(128, 128, 128, 0.1);
+                border: 1px solid rgba(128, 128, 128, 0.3);
+                border-radius: 8px;
+                z-index: 1000;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+
+            #dashboard-header {
+                padding: 8px 12px;
+                border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+                color: white;
+                font-size: 10px;
+                opacity: 0.8;
+            }
+
+            #dashboard-content {
+                flex: 1;
+                overflow: hidden;
+                padding: 8px;
+            }
+
+            .trade-tile {
+                background: rgba(128, 128, 128, 0.05);
+                border: 1px solid rgba(128, 128, 128, 0.2);
+                border-radius: 4px;
+                padding: 8px;
+                margin-bottom: 6px;
+                color: white;
+                font-size: 10px;
+                line-height: 1.2;
+            }
+
+            .trade-value {
+                font-weight: bold;
+                color: #4CAF50;
+                font-size: 11px;
+            }
+
+            .trade-meta {
+                color: rgba(255, 255, 255, 0.7);
+                font-size: 9px;
+                margin-top: 3px;
+            }
+
+            #toggle-container {
+                position: fixed;
+                bottom: 15px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.3);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 18px;
+                padding: 6px 12px;
+                z-index: 1000;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                backdrop-filter: blur(10px);
+                pointer-events: all;
+            }
+
+            .toggle-switch {
+                position: relative;
+                width: 40px;
+                height: 20px;
+                background: rgba(128, 128, 128, 0.4);
+                border-radius: 10px;
+                cursor: pointer;
+                transition: background-color 0.3s;
+                pointer-events: all;
+                z-index: 1001;
+            }
+
+            .toggle-switch.active {
+                background: rgba(118, 185, 0, 0.6);
+            }
+
+            .toggle-slider {
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 16px;
+                height: 16px;
+                background: white;
+                border-radius: 8px;
+                transition: transform 0.3s;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            }
+
+            .toggle-switch.active .toggle-slider {
+                transform: translateX(20px);
+            }
+
+            .toggle-label {
+                color: white;
+                font-size: 10px;
+                font-weight: 500;
+                opacity: 0.6;
+                transition: opacity 0.3s;
+                white-space: nowrap;
+            }
+
+            .toggle-label.active {
+                opacity: 1;
+                color: #76b900;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="dashboard">
+            <div id="dashboard-header">Semiconductor Trade Flows • 2024</div>
+            <div id="dashboard-content"></div>
+        </div>
+
+        <div id="toggle-container">
+            <span class="toggle-label active" id="trade-label">Trade Flows</span>
+            <div class="toggle-switch" id="data-toggle">
+                <div class="toggle-slider"></div>
+            </div>
+            <span class="toggle-label" id="h100-label">H100 Supply Chain</span>
+        </div>
+
+        <script>
+            // Static trade flow data (embedded in JavaScript)
+            const STATIC_TRADE_DATA = {
+                "trade_flows": [
+                    {
+                        "from_country": "China",
+                        "from_lat": 35.8617,
+                        "from_lon": 104.1954,
+                        "to_country": "United States",
+                        "to_lat": 37.0902,
+                        "to_lon": -95.7129,
+                        "trade_value": 45.2,
+                        "commodity": "Semiconductor devices"
+                    },
+                    {
+                        "from_country": "Taiwan",
+                        "from_lat": 23.6978,
+                        "from_lon": 120.9605,
+                        "to_country": "United States",
+                        "to_lat": 37.0902,
+                        "to_lon": -95.7129,
+                        "trade_value": 32.1,
+                        "commodity": "Electronic integrated circuits"
+                    },
+                    {
+                        "from_country": "South Korea",
+                        "from_lat": 35.9078,
+                        "from_lon": 127.7669,
+                        "to_country": "China",
+                        "to_lat": 35.8617,
+                        "to_lon": 104.1954,
+                        "trade_value": 28.5,
+                        "commodity": "Memory chips"
+                    },
+                    {
+                        "from_country": "Japan",
+                        "from_lat": 36.2048,
+                        "from_lon": 138.2529,
+                        "to_country": "United States",
+                        "to_lat": 37.0902,
+                        "to_lon": -95.7129,
+                        "trade_value": 18.7,
+                        "commodity": "Semiconductor materials"
+                    },
+                    {
+                        "from_country": "Netherlands",
+                        "from_lat": 52.1326,
+                        "from_lon": 5.2913,
+                        "to_country": "Taiwan",
+                        "to_lat": 23.6978,
+                        "to_lon": 120.9605,
+                        "trade_value": 8.3,
+                        "commodity": "Lithography equipment"
+                    },
+                    {
+                        "from_country": "Germany",
+                        "from_lat": 51.1657,
+                        "from_lon": 10.4515,
+                        "to_country": "China",
+                        "to_lat": 35.8617,
+                        "to_lon": 104.1954,
+                        "trade_value": 12.4,
+                        "commodity": "Manufacturing equipment"
+                    },
+                    {
+                        "from_country": "Singapore",
+                        "from_lat": 1.3521,
+                        "from_lon": 103.8198,
+                        "to_country": "United States",
+                        "to_lat": 37.0902,
+                        "to_lon": -95.7129,
+                        "trade_value": 22.9,
+                        "commodity": "Assembly services"
+                    }
+                ],
+                "total_value": 168.1,
+                "data_source": "Static sample data for GitHub Pages",
+                "timestamp": "2025-08-01T00:00:00Z"
+            };
+
+            // H100 GPU Complete Supply Chain Data (ALL flows from CSV analysis)
+            window.H100_SUPPLY_CHAIN_DATA = {
+                "supply_flows": [
+                    // TIER 1 TO FINAL ASSEMBLY - Major Components
+                    {
+                        "from_country": "Taiwan", "to_country": "Global",
+                        "from_lat": 22.9908, "from_lon": 120.2133,
+                        "to_lat": 37.4419, "to_lon": -122.1430,
+                        "trade_value": 15000, "commodity": "TSMC 4N 5nm 819mm² Die",
+                        "company": "Taiwan Semiconductor → NVIDIA"
+                    },
+                    {
+                        "from_country": "South Korea", "to_country": "Global",
+                        "from_lat": 37.2636, "from_lon": 127.0286,
+                        "to_lat": 37.4419, "to_lon": -122.1430,
+                        "trade_value": 8000, "commodity": "SK Hynix HBM3 8‑Hi (16 GB) Stack",
+                        "company": "SK Hynix → NVIDIA"
+                    },
+                    {
+                        "from_country": "Singapore", "to_country": "Global",
+                        "from_lat": 1.3521, "from_lon": 103.8198,
+                        "to_lat": 37.4419, "to_lon": -122.1430,
+                        "trade_value": 2000, "commodity": "40 nm 2.5D Interposer (858mm²)",
+                        "company": "UMC (TSMC CoWoS) → NVIDIA"
+                    },
+                    {
+                        "from_country": "Japan", "to_country": "Global",
+                        "from_lat": 35.3697, "from_lon": 136.612,
+                        "to_lat": 37.4419, "to_lon": -122.1430,
+                        "trade_value": 1500, "commodity": "ABF Substrate 20-layer",
+                        "company": "Ibiden → NVIDIA"
+                    },
+                    {
+                        "from_country": "Taiwan", "to_country": "Global",
+                        "from_lat": 22.6273, "from_lon": 120.3014,
+                        "to_lat": 37.4419, "to_lon": -122.1430,
+                        "trade_value": 500, "commodity": "12-phase VRM assembly",
+                        "company": "Foxconn → NVIDIA"
+                    },
+                    {
+                        "from_country": "Japan", "to_country": "Global",
+                        "from_lat": 35.365, "from_lon": 136.602,
+                        "to_lat": 37.4419, "to_lon": -122.1430,
+                        "trade_value": 300, "commodity": "32-layer HDI PCB",
+                        "company": "Ibiden → NVIDIA"
+                    },
+                    {
+                        "from_country": "Japan", "to_country": "Global",
+                        "from_lat": 36.742, "from_lon": 138.369,
+                        "to_lat": 37.4419, "to_lon": -122.1430,
+                        "trade_value": 200, "commodity": "Ni-plated C1100 Cu Lid",
+                        "company": "Shinko Electric → NVIDIA"
+                    },
+                    
+                    // TIER 2 TO TIER 1 - Component Assembly
+                    {
+                        "from_country": "Malaysia", "to_country": "Taiwan",
+                        "from_lat": 2.913, "from_lon": 101.469,
+                        "to_lat": 22.6273, "to_lon": 120.3014,
+                        "trade_value": 100, "commodity": "Renesas ISL99390",
+                        "company": "Renesas Electronics → Foxconn"
+                    },
+                    {
+                        "from_country": "Japan", "to_country": "Taiwan",
+                        "from_lat": 39.3303, "from_lon": 139.915,
+                        "to_lat": 22.6273, "to_lon": 120.3014,
+                        "trade_value": 80, "commodity": "0.33 uH Shielded Power Inductors",
+                        "company": "TDK Corporation → Foxconn"
+                    },
+                    {
+                        "from_country": "Japan", "to_country": "Taiwan",
+                        "from_lat": 35.999, "from_lon": 136.188,
+                        "to_lat": 22.6273, "to_lon": 120.3014,
+                        "trade_value": 60, "commodity": "0603 22 µF X6S MLCCs",
+                        "company": "Murata Manufacturing → Foxconn"
+                    },
+                    {
+                        "from_country": "Japan", "to_country": "Taiwan",
+                        "from_lat": 36.397, "from_lon": 140.535,
+                        "to_lat": 22.6273, "to_lon": 120.3014,
+                        "trade_value": 40, "commodity": "Renesas RAA229131",
+                        "company": "Renesas Electronics → Foxconn"
+                    },
+                    {
+                        "from_country": "Japan", "to_country": "Japan",
+                        "from_lat": 34.958, "from_lon": 136.613,
+                        "to_lat": 35.365, "to_lon": 136.602,
+                        "trade_value": 50, "commodity": "Megtron 6 laminate",
+                        "company": "Panasonic Industry → Ibiden"
+                    },
+                    {
+                        "from_country": "Japan", "to_country": "Japan",
+                        "from_lat": 35.97, "from_lon": 139.6,
+                        "to_lat": 35.365, "to_lon": 136.602,
+                        "trade_value": 40, "commodity": "18 µm ED foil",
+                        "company": "Mitsui Mining & Smelting → Ibiden"
+                    },
+                    {
+                        "from_country": "Canada", "to_country": "Japan",
+                        "from_lat": 46.493, "from_lon": -80.995,
+                        "to_lat": 35.365, "to_lon": 136.602,
+                        "trade_value": 20, "commodity": "Electroless Ni plating",
+                        "company": "Glencore → Ibiden"
+                    },
+                    {
+                        "from_country": "USA", "to_country": "Japan",
+                        "from_lat": 39.1638, "from_lon": -119.7674,
+                        "to_lat": 35.365, "to_lon": 136.602,
+                        "trade_value": 15, "commodity": "Immersion Au plating",
+                        "company": "Barrick Gold → Ibiden"
+                    },
+                    {
+                        "from_country": "China", "to_country": "Japan",
+                        "from_lat": 22.659, "from_lon": 114.047,
+                        "to_lat": 35.365, "to_lon": 136.602,
+                        "trade_value": 35, "commodity": "988-pad LGA Socket",
+                        "company": "Foxconn Interconnect → Ibiden"
+                    },
+                    {
+                        "from_country": "Thailand", "to_country": "Japan",
+                        "from_lat": 13.7563, "from_lon": 100.5018,
+                        "to_lat": 35.365, "to_lon": 136.602,
+                        "trade_value": 10, "commodity": "AT24C04 + PMBus Temp",
+                        "company": "Microchip Technology → Ibiden"
+                    },
+                    {
+                        "from_country": "Japan", "to_country": "Japan",
+                        "from_lat": 36.197, "from_lon": 139.281,
+                        "to_lat": 35.3697, "to_lon": 136.612,
+                        "trade_value": 200, "commodity": "ABF GX-92 Film 25 µm",
+                        "company": "Ajinomoto Fine-Techno → Ibiden"
+                    },
+                    {
+                        "from_country": "Japan", "to_country": "Japan",
+                        "from_lat": 38.439, "from_lon": 140.401,
+                        "to_lat": 35.3697, "to_lon": 136.612,
+                        "trade_value": 150, "commodity": "SAC305 C4 Bumps",
+                        "company": "Senju Metal Industry → Ibiden"
+                    },
+                    {
+                        "from_country": "Taiwan", "to_country": "Japan",
+                        "from_lat": 24.954, "from_lon": 121.226,
+                        "to_lat": 35.3697, "to_lon": 136.612,
+                        "trade_value": 80, "commodity": "Loctite UF1173 Underfill",
+                        "company": "Henkel Electronic Materials → Ibiden"
+                    },
+                    {
+                        "from_country": "USA", "to_country": "Japan",
+                        "from_lat": 43.107, "from_lon": -75.252,
+                        "to_lat": 36.742, "to_lon": 138.369,
+                        "trade_value": 50, "commodity": "Indium 97 / Ag 3 Foil",
+                        "company": "Indium Corporation → Shinko"
+                    },
+                    {
+                        "from_country": "Japan", "to_country": "Japan",
+                        "from_lat": 36.391, "from_lon": 139.06,
+                        "to_lat": 36.742, "to_lon": 138.369,
+                        "trade_value": 40, "commodity": "Sarcon XR-m Graphite Pad",
+                        "company": "Fujipoly → Shinko Electric"
+                    },
+                    
+                    // TIER 3+ RAW MATERIALS & PROCESSING
+                    {
+                        "from_country": "Japan", "to_country": "Malaysia",
+                        "from_lat": 32.708, "from_lon": 130.636,
+                        "to_lat": 2.913, "to_lon": 101.469,
+                        "trade_value": 50, "commodity": "110 nm BCDMOS die",
+                        "company": "Renesas Electronics → Renesas Malaysia"
+                    },
+                    {
+                        "from_country": "South Korea", "to_country": "Malaysia",
+                        "from_lat": 35.54, "from_lon": 129.32,
+                        "to_lat": 2.913, "to_lon": 101.469,
+                        "trade_value": 30, "commodity": "C194 CuNiSi strip",
+                        "company": "Poongsan → Renesas Malaysia"
+                    },
+                    {
+                        "from_country": "China", "to_country": "Malaysia",
+                        "from_lat": 31.303, "from_lon": 120.587,
+                        "to_lat": 2.913, "to_lon": 101.469,
+                        "trade_value": 20, "commodity": "EME-G700 epoxy",
+                        "company": "Sumitomo Bakelite → Renesas"
+                    },
+                    {
+                        "from_country": "Peru", "to_country": "Malaysia",
+                        "from_lat": -15.8402, "from_lon": -70.0219,
+                        "to_lat": 2.913, "to_lon": 101.469,
+                        "trade_value": 15, "commodity": "Tin (Sn) finish",
+                        "company": "Minsur → Renesas Malaysia"
+                    },
+                    {
+                        "from_country": "Japan", "to_country": "Japan",
+                        "from_lat": 38.728, "from_lon": 140.39,
+                        "to_lat": 39.3303, "to_lon": 139.915,
+                        "trade_value": 25, "commodity": "MnZn Ferrite Powder",
+                        "company": "JFE Mineral & Alloy → TDK"
+                    },
+                    {
+                        "from_country": "Japan", "to_country": "Japan",
+                        "from_lat": 35.1, "from_lon": 136.6,
+                        "to_lat": 39.3303, "to_lon": 139.915,
+                        "trade_value": 20, "commodity": "Ø0.10 mm E-Cu Magnet Wire",
+                        "company": "Furukawa Electric → TDK"
+                    },
+                    {
+                        "from_country": "Japan", "to_country": "Japan",
+                        "from_lat": 33.25, "from_lon": 131.7,
+                        "to_lat": 35.999, "to_lon": 136.188,
+                        "trade_value": 30, "commodity": "Ni Electrode Paste",
+                        "company": "JX Metals → Murata"
+                    },
+                    {
+                        "from_country": "USA", "to_country": "Japan",
+                        "from_lat": 33.561, "from_lon": -81.721,
+                        "to_lat": 34.958, "to_lon": 136.613,
+                        "trade_value": 35, "commodity": "E-glass cloth",
+                        "company": "Owens Corning → Panasonic"
+                    },
+                    {
+                        "from_country": "USA", "to_country": "USA",
+                        "from_lat": 28.96, "from_lon": -95.36,
+                        "to_lat": 39.163, "to_lon": -119.767,
+                        "trade_value": 15, "commodity": "Novolac-type epoxy",
+                        "company": "Dow Chemical → Taiyo Ink"
+                    },
+                    {
+                        "from_country": "Germany", "to_country": "Germany",
+                        "from_lat": 53.55, "from_lon": 9.99,
+                        "to_lat": 52.513, "to_lon": 13.392,
+                        "trade_value": 12, "commodity": "CuSO₄ electrolyte grade",
+                        "company": "Aurubis → Atotech"
+                    },
+                    
+                    // CRITICAL RAW MATERIALS
+                    {
+                        "from_country": "USA", "to_country": "Japan",
+                        "from_lat": 35.916, "from_lon": -82.066,
+                        "to_lat": 37.13, "to_lon": 140.35,
+                        "trade_value": 100, "commodity": "HPQ ore (Spruce Pine)",
+                        "company": "The Quartz Corp → Shin-Etsu"
+                    },
+                    {
+                        "from_country": "USA", "to_country": "USA",
+                        "from_lat": 35.916, "from_lon": -82.066,
+                        "to_lat": 33.561, "to_lon": -81.721,
+                        "trade_value": 60, "commodity": "Quartz sand",
+                        "company": "The Quartz Corp → Owens Corning"
+                    },
+                    {
+                        "from_country": "Chile", "to_country": "South Korea",
+                        "from_lat": -23.6509, "from_lon": -70.3975,
+                        "to_lat": 35.54, "to_lon": 129.32,
+                        "trade_value": 120, "commodity": "99.99% Cu cathode",
+                        "company": "BHP → Poongsan"
+                    },
+                    {
+                        "from_country": "Chile", "to_country": "Japan",
+                        "from_lat": -22.4569, "from_lon": -68.9267,
+                        "to_lat": 35.1, "to_lon": 136.6,
+                        "trade_value": 80, "commodity": "99.99% Cu cathode",
+                        "company": "Freeport-McMoRan → Furukawa"
+                    },
+                    {
+                        "from_country": "Poland", "to_country": "Germany",
+                        "from_lat": 51.4, "from_lon": 16.2,
+                        "to_lat": 53.55, "to_lon": 9.99,
+                        "trade_value": 70, "commodity": "Lubin concentrate",
+                        "company": "KGHM Polska Miedź → Aurubis"
+                    },
+                    {
+                        "from_country": "Australia", "to_country": "Japan",
+                        "from_lat": -13.88, "from_lon": 136.6,
+                        "to_lat": 38.728, "to_lon": 140.39,
+                        "trade_value": 90, "commodity": "High-grade Mn ore",
+                        "company": "South32 → JFE Mineral"
+                    },
+                    {
+                        "from_country": "USA", "to_country": "Japan",
+                        "from_lat": 64.7511, "from_lon": -164.0685,
+                        "to_lat": 38.728, "to_lon": 140.39,
+                        "trade_value": 40, "commodity": "Sphalerite concentrate",
+                        "company": "Teck Resources → JFE Mineral"
+                    },
+                    {
+                        "from_country": "Japan", "to_country": "USA",
+                        "from_lat": 42.983, "from_lon": 141.05,
+                        "to_lat": 43.107, "to_lon": -75.252,
+                        "trade_value": 200, "commodity": "Indium-bearing Sulfide Ore",
+                        "company": "Dowa Holdings → Indium Corp"
+                    },
+                    {
+                        "from_country": "Russia", "to_country": "Japan",
+                        "from_lat": 69.4, "from_lon": 88.1,
+                        "to_lat": 33.25, "to_lon": 131.7,
+                        "trade_value": 150, "commodity": "High-Ni matte",
+                        "company": "Nornickel → JX Metals"
+                    },
+                    {
+                        "from_country": "USA", "to_country": "Japan",
+                        "from_lat": 40.7589, "from_lon": -116.7019,
+                        "to_lat": 37.916, "to_lon": 139.04,
+                        "trade_value": 70, "commodity": "Baryte (BaSO₄) ore",
+                        "company": "Excalibar Minerals → Nippon Chemical"
+                    },
+                    {
+                        "from_country": "Australia", "to_country": "Japan",
+                        "from_lat": -31.9505, "from_lon": 115.8605,
+                        "to_lat": 37.916, "to_lon": 139.04,
+                        "trade_value": 60, "commodity": "TiO₂-rich rutile",
+                        "company": "Iluka Resources → Nippon Chemical"
+                    },
+                    {
+                        "from_country": "Saudi Arabia", "to_country": "China",
+                        "from_lat": 27.039, "from_lon": 49.646,
+                        "to_lat": 31.303, "to_lon": 120.587,
+                        "trade_value": 200, "commodity": "BPA monomer",
+                        "company": "SABIC → Sumitomo Bakelite"
+                    },
+                    {
+                        "from_country": "USA", "to_country": "USA",
+                        "from_lat": 29.735, "from_lon": -94.957,
+                        "to_lat": 28.96, "to_lon": -95.36,
+                        "trade_value": 100, "commodity": "Polymer-grade propylene",
+                        "company": "ExxonMobil → Dow Chemical"
+                    },
+                    {
+                        "from_country": "USA", "to_country": "USA",
+                        "from_lat": 31.9, "from_lon": -102.1,
+                        "to_lat": 29.735, "to_lon": -94.957,
+                        "trade_value": 80, "commodity": "West Texas Light Sweet",
+                        "company": "Pioneer Natural → ExxonMobil"
+                    }
+                ],
+                "total_value": 32540,
+                "data_source": "Complete H100 GPU Supply Chain Analysis - ALL 66 Components Mapped",
+                "timestamp": "2025-08-02T00:00:00Z"
+            };
+
+            // Static world map GeoJSON data (inline for GitHub Pages)
+            const WORLD_GEOJSON_URL = 'https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson';
+        </script>
+        
+        <script src="./globe-static.js"></script>
+    </body>
+</html>

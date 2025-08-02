@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Semiconductor Trade Monitor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .description {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        .demo-button {
+            display: block;
+            width: 300px;
+            margin: 20px auto;
+            padding: 15px 30px;
+            background: #4CAF50;
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            border-radius: 5px;
+            font-size: 18px;
+            transition: background-color 0.3s;
+        }
+        .demo-button:hover {
+            background: #45a049;
+        }
+        .features {
+            margin: 30px 0;
+        }
+        .features h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .features ul {
+            color: #666;
+            line-height: 1.8;
+        }
+        .github-link {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .github-link a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .github-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Semiconductor Trade Monitor</h1>
+        
+        <div class="description">
+            Interactive 3D globe visualization showing global semiconductor trade flows.
+            This static version runs entirely in your browser without any server dependencies.
+        </div>
+        
+        <a href="globe-static.html" class="demo-button">
+            🚀 Launch Interactive Globe
+        </a>
+        
+        <div class="features">
+            <h2>Features</h2>
+            <ul>
+                <li><strong>Interactive 3D Globe:</strong> Drag to rotate, scroll to zoom</li>
+                <li><strong>Real-time Trade Flows:</strong> Animated routes showing semiconductor trade</li>
+                <li><strong>Color-coded Values:</strong> Red (>$30B), Orange (>$15B), Blue (smaller)</li>
+                <li><strong>Country Labels:</strong> Major semiconductor trading partners</li>
+                <li><strong>Trade Dashboard:</strong> Live data panel with trade statistics</li>
+                <li><strong>GitHub Pages Ready:</strong> Static deployment with no server required</li>
+            </ul>
+        </div>
+
+        <div class="features">
+            <h2>Technology Stack</h2>
+            <ul>
+                <li><strong>3D Graphics:</strong> Three.js WebGL rendering</li>
+                <li><strong>Data Format:</strong> GeoJSON world map + embedded trade data</li>
+                <li><strong>Performance:</strong> Optimized for smooth 60fps animation</li>
+                <li><strong>Compatibility:</strong> Works on modern desktop and mobile browsers</li>
+            </ul>
+        </div>
+        
+        <div class="github-link">
+            <p>View source code and contribute on <a href="#">GitHub</a></p>
+        </div>
+    </div>
+</body>
+</html>

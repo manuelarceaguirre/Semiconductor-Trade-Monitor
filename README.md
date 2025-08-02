@@ -1,44 +1,61 @@
-# Semiconductor Trade Monitor MVP
+# 🌐 Semiconductor Trade Monitor
 
-A lean web-based analytics platform for monitoring global semiconductor trade flows. This MVP provides real-time insights into HBM memory, GPU/AI accelerators, and lithography equipment trade between key countries.
+Interactive 3D globe visualization showing global semiconductor trade flows. This project provides a web-based analytics platform with real-time animated trade routes and comprehensive backend API.
+
+## 🚀 Live Demo
+
+**GitHub Pages:** [View Interactive Globe](https://yourusername.github.io/semiconductormonitor/)
+
+## ✨ Features
+
+- **Interactive 3D Globe** - Drag to rotate, scroll to zoom
+- **Animated Trade Flows** - Real-time curved arcs with moving particles
+- **Color-coded Routes** - Red (>$30B), Orange (>$15B), Blue (smaller)
+- **Trade Dashboard** - Live statistics panel
+- **Country Labels** - Major semiconductor trading partners
+- **Static Deployment** - Works on GitHub Pages without server
 
 ## 🚀 Quick Start
 
-### ⚡ Super Easy Testing (Recommended)
+### Option 1: GitHub Pages (Recommended)
+1. Fork this repository
+2. Go to Settings → Pages
+3. Select "Deploy from a branch" → main branch  
+4. Your site will be available at `https://yourusername.github.io/semiconductormonitor/`
+
+### Option 2: Local Static Version
 ```bash
-# Test everything automatically
-python3 quick_test.py
-
-# Or use interactive test menu
-python3 test_runner.py
-
-# Get help
-python3 help.py
+# Clone and run locally
+git clone https://github.com/yourusername/semiconductormonitor.git
+cd semiconductormonitor
+python3 -m http.server 8080
+open http://localhost:8080
 ```
 
-### 🔧 Manual Testing (Step by Step)
+### Option 3: Full Development Setup (Advanced)
 ```bash
-# 1. Run the ETL Pipeline
-python3 etl_pipeline.py
+# Install Python dependencies for backend API
+pip install -r requirements.txt
 
-# 2. Test the Analytics  
-python3 simple_dashboard_test.py
+# Start the FastAPI server  
+python3 -m uvicorn src.api.fastapi_server:app --host 0.0.0.0 --port 8000 --reload
 
-# 3. Test the API Server
-python3 api_server.py
-
-# 4. Run Full System Test
-python3 run_full_test.py
+# Access dynamic version with real API data
+open http://localhost:8000/globe
 ```
 
-### 🌐 Dashboard (Optional - Requires Streamlit)
-```bash
-# Install dependencies
-pip install streamlit pandas plotly
+## 📁 File Structure
 
-# Run dashboard
-streamlit run dashboard.py
-# Access at: http://localhost:8501
+```
+semiconductormonitor/
+├── index.html              # Landing page
+├── globe-static.html       # Main 3D globe visualization  
+├── globe-static.js         # Globe implementation
+├── static-trade-flows.json # Sample trade data
+├── world.geojson          # World map data
+├── src/api/               # FastAPI backend (optional)
+├── requirements.txt       # Python dependencies  
+└── README.md             # This file
 ```
 
 ## 📊 Features Implemented
