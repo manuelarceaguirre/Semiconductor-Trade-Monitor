@@ -46,7 +46,8 @@ class StaticDashboardManager {
     constructor() {
         this.dashboardContent = document.getElementById('dashboard-content');
         this.dashboardHeader = document.getElementById('dashboard-header');
-        this.isH100Mode = false;
+        this.isH100Mode = true;
+        this.selectedFlowIndex = null;
         this.init();
     }
 
@@ -79,53 +80,147 @@ class StaticDashboardManager {
             { value: '$8.3B', route: 'Netherlands → Taiwan', commodity: 'Lithography equipment', time: 'Recent', code: 'HS: 848620' }
         ];
         
-        this.dashboardContent.innerHTML = staticTradeData.map(trade => `
-            <div class="trade-tile">
+        this.dashboardContent.innerHTML = staticTradeData.map((trade, index) => `
+            <div class="trade-tile" data-flow-index="${index}" data-flow-type="trade">
                 <div class="trade-value">${trade.value}</div>
                 <div>${trade.route}: ${trade.commodity}</div>
                 <div class="trade-meta">${trade.time} • ${trade.code}</div>
             </div>
         `).join('');
+        
+        this.addTileClickHandlers();
     }
 
     renderH100Tiles() {
         if (this.dashboardHeader) {
-            this.dashboardHeader.textContent = 'H100 GPU Supply Chain • 2024';
+            this.dashboardHeader.textContent = 'H100 GPU Supply Chain Paths • All 66 Routes';
         }
         
-        const h100SupplyData = [
-            { value: '$85.5B', route: 'Taiwan → US', commodity: 'TSMC 4N 5nm GPU Die', company: 'TSMC', tier: 'Tier 1' },
-            { value: '$64.2B', route: 'South Korea → US', commodity: 'HBM3 Memory Stack', company: 'SK Hynix', tier: 'Tier 1' },
-            { value: '$42.8B', route: 'Singapore → US', commodity: 'CoWoS Interposer', company: 'UMC', tier: 'Tier 1' },
-            { value: '$38.9B', route: 'Japan → US', commodity: 'Package Substrate', company: 'Ibiden', tier: 'Tier 1' },
-            { value: '$28.4B', route: 'Taiwan → US', commodity: 'VRM System', company: 'Foxconn', tier: 'Tier 2' },
-            { value: '$24.7B', route: 'Japan → US', commodity: 'Main PCB', company: 'Ibiden', tier: 'Tier 3' },
-            { value: '$18.6B', route: 'Chile → South Korea', commodity: 'Copper Cathode', company: 'BHP', tier: 'Tier 6' }
-        ];
+        // Get all H100 supply chain flows from the embedded data
+        const h100Data = window.H100_SUPPLY_CHAIN_DATA || (typeof H100_SUPPLY_CHAIN_DATA !== 'undefined' ? H100_SUPPLY_CHAIN_DATA : null);
         
-        this.dashboardContent.innerHTML = h100SupplyData.map(supply => `
-            <div class="trade-tile">
+        if (!h100Data || !h100Data.supply_flows) {
+            console.error('❌ H100 supply chain data not available for dashboard');
+            this.dashboardContent.innerHTML = '<div class="trade-tile">H100 data not available</div>';
+            return;
+        }
+        
+        // Sort flows by trade value (descending) to show most important first
+        const sortedFlows = [...h100Data.supply_flows].sort((a, b) => b.trade_value - a.trade_value);
+        
+        // Format flows for display
+        const h100SupplyData = sortedFlows.map(flow => {
+            // Use city names if available, fallback to country names
+            const fromLocation = flow.from_city && flow.from_city !== '–' && flow.from_city !== '' 
+                ? `${flow.from_city}, ${flow.from_country}` 
+                : flow.from_country;
+            const toLocation = flow.to_city && flow.to_city !== '–' && flow.to_city !== ''
+                ? `${flow.to_city}, ${flow.to_country}`
+                : flow.to_country;
+                
+            return {
+                value: `$${(flow.trade_value / 1000).toFixed(1)}B`,
+                route: `${fromLocation} → ${toLocation}`,
+                commodity: flow.commodity,
+                company: flow.company || 'Multiple suppliers',
+                // Determine tier based on trade value and commodity type
+                tier: this.determineTier(flow)
+            };
+        });
+        
+        this.dashboardContent.innerHTML = h100SupplyData.map((supply, index) => `
+            <div class="trade-tile" data-flow-index="${index}" data-flow-type="h100">
                 <div class="trade-value">${supply.value}</div>
-                <div>${supply.route}: ${supply.commodity}</div>
+                <div>${supply.route}</div>
+                <div style="font-size: 9px; color: rgba(255,255,255,0.9); margin: 2px 0;">${supply.commodity}</div>
                 <div class="trade-meta">${supply.company} • ${supply.tier}</div>
             </div>
         `).join('');
+        
+        this.addTileClickHandlers();
+    }
+    
+    determineTier(flow) {
+        const value = flow.trade_value;
+        const commodity = flow.commodity.toLowerCase();
+        
+        // Final assembly components
+        if (commodity.includes('die') || commodity.includes('hbm') || commodity.includes('interposer') || value >= 1000) {
+            return 'Tier 1';
+        }
+        // Major sub-assemblies  
+        else if (commodity.includes('substrate') || commodity.includes('vrm') || commodity.includes('pcb') || value >= 200) {
+            return 'Tier 2';
+        }
+        // Components and materials
+        else if (value >= 50) {
+            return 'Tier 3';
+        }
+        // Raw materials
+        else {
+            return 'Raw Materials';
+        }
+    }
+    
+    addTileClickHandlers() {
+        const tiles = this.dashboardContent.querySelectorAll('.trade-tile');
+        tiles.forEach(tile => {
+            tile.addEventListener('click', (e) => {
+                const flowIndex = parseInt(tile.dataset.flowIndex);
+                const flowType = tile.dataset.flowType;
+                
+                // Toggle selection
+                if (this.selectedFlowIndex === flowIndex) {
+                    // Deselect - show all flows
+                    this.selectedFlowIndex = null;
+                    this.updateTileSelection();
+                    if (window.tradeFlowManager) {
+                        window.tradeFlowManager.showAllFlows();
+                    }
+                } else {
+                    // Select this flow
+                    this.selectedFlowIndex = flowIndex;
+                    this.updateTileSelection();
+                    if (window.tradeFlowManager) {
+                        window.tradeFlowManager.showSingleFlow(flowIndex, flowType);
+                    }
+                }
+            });
+        });
+    }
+    
+    updateTileSelection() {
+        const tiles = this.dashboardContent.querySelectorAll('.trade-tile');
+        tiles.forEach((tile, index) => {
+            if (index === this.selectedFlowIndex) {
+                tile.classList.add('selected');
+            } else {
+                tile.classList.remove('selected');
+            }
+        });
+    }
+    
+    clearSelection() {
+        this.selectedFlowIndex = null;
+        this.updateTileSelection();
     }
 
     switchToH100Mode() {
         this.isH100Mode = true;
+        this.clearSelection();
         this.renderStaticTiles();
     }
 
     switchToTradeMode() {
         this.isH100Mode = false;
+        this.clearSelection();
         this.renderStaticTiles();
     }
 }
 
 // Initialize dashboard when DOM is ready
 let dashboardManager;
-let isH100Mode = false;
+let isH100Mode = true;
 
 document.addEventListener('DOMContentLoaded', () => {
     dashboardManager = new StaticDashboardManager();
@@ -315,18 +410,56 @@ loadWorldGeoJSON().then(res => {
     initializeToggle();
     console.log('🔄 Called initializeToggle');
     
-    // Add country labels
-    setTimeout(() => {
-        console.log('🏷️ Adding country labels...');
-        addStaticCountryLabel('USA', 39.8283, -98.5795, globeScale);
-        addStaticCountryLabel('China', 35.8617, 104.1954, globeScale);
-        addStaticCountryLabel('Taiwan', 23.6978, 120.9605, globeScale);
-        addStaticCountryLabel('Japan', 36.2048, 138.2529, globeScale);
-        addStaticCountryLabel('Germany', 51.1657, 10.4515, globeScale);
-        addStaticCountryLabel('Netherlands', 52.1326, 5.2913, globeScale);
-        addStaticCountryLabel('S. Korea', 35.9078, 127.7669, globeScale);
-        addStaticCountryLabel('Singapore', 1.3521, 103.8198, globeScale);
-    }, 1000);
+    // Add country labels only for countries in trade flows
+    console.log('🏷️ Adding trade-relevant country labels...');
+    const tradeCountries = window.tradeFlowManager.getTradeCountries();
+    console.log('📍 Trade countries:', tradeCountries);
+    
+    // Country name standardization and coordinates
+    const countryCoordinates = {
+            'China': [35.8617, 104.1954],
+            'Taiwan': [23.6978, 120.9605],
+            'South Korea': [35.9078, 127.7669],
+            'Japan': [36.2048, 138.2529],
+            'United States': [39.8283, -98.5795],
+            'USA': [39.8283, -98.5795],
+            'Singapore': [1.3521, 103.8198],
+            'Netherlands': [52.1326, 5.2913],
+            'Germany': [51.1657, 10.4515],
+            'Malaysia': [4.2105, 101.9758],
+            'Chile': [-35.6751, -71.5430],
+            'Australia': [-25.2744, 133.7751],
+            'Canada': [56.1304, -106.3468],
+            'Russia': [61.5240, 105.3188],
+            'Peru': [-9.1900, -75.0152],
+            'Saudi Arabia': [23.8859, 45.0792],
+            'Poland': [51.9194, 19.1451],
+            'Thailand': [15.8700, 100.9925]
+        };
+        
+        // Standardize country names to avoid duplicates
+        const countryNameMap = {
+            'United States': 'USA',
+            'USA': 'USA'
+        };
+        
+        // Get unique standardized countries
+        const standardizedCountries = new Set();
+        tradeCountries.forEach(country => {
+            const standardName = countryNameMap[country] || country;
+            standardizedCountries.add(standardName);
+        });
+        
+        // Add labels for unique countries only
+        Array.from(standardizedCountries).forEach(country => {
+            const coords = countryCoordinates[country];
+            if (coords) {
+                const [lat, lng] = coords;
+                addStaticCountryLabel(country, lat, lng, globeScale);
+            } else {
+                console.warn(`⚠️ No coordinates found for country: ${country}`);
+            }
+        });
 }).catch(error => {
     console.error('Failed to load world map:', error);
 });
@@ -461,7 +594,10 @@ class StaticTradeFlowManager {
         this.h100Flows = [];
         this.animatedParticles = [];
         this.animationFrameCount = 0;
-        this.isH100Mode = false;
+        this.isH100Mode = true;
+        this.selectedFlowIndex = null;
+        this.selectedFlowType = null;
+        this.tradeCountries = new Set(); // Track countries in trade flows
         
         this.init();
     }
@@ -477,16 +613,22 @@ class StaticTradeFlowManager {
         console.log('🌐 Loading static trade flow data...');
         
         // Transform static data to our format
-        const flows = STATIC_TRADE_DATA.trade_flows.map(flow => ({
-            from: flow.from_country,
-            to: flow.to_country,
-            value: flow.trade_value,
-            commodity: flow.commodity,
-            coordinates: {
-                from: [flow.from_lon, flow.from_lat],
-                to: [flow.to_lon, flow.to_lat]
-            }
-        }));
+        const flows = STATIC_TRADE_DATA.trade_flows.map(flow => {
+            // Track countries for labeling
+            this.tradeCountries.add(flow.from_country);
+            this.tradeCountries.add(flow.to_country);
+            
+            return {
+                from: flow.from_country,
+                to: flow.to_country,
+                value: flow.trade_value,
+                commodity: flow.commodity,
+                coordinates: {
+                    from: [flow.from_lon, flow.from_lat],
+                    to: [flow.to_lon, flow.to_lat]
+                }
+            };
+        });
         
         console.log(`✅ Loaded ${flows.length} static trade flows`);
         this.createTradeFlowVisualizations(flows, 'trade');
@@ -510,17 +652,23 @@ class StaticTradeFlowManager {
         console.log('🔥 H100_SUPPLY_CHAIN_DATA found:', h100Data);
         
         // Transform H100 data to our format
-        const flows = h100Data.supply_flows.map(flow => ({
-            from: flow.from_country,
-            to: flow.to_country,
-            value: flow.trade_value,
-            commodity: flow.commodity,
-            company: flow.company,
-            coordinates: {
-                from: [flow.from_lon, flow.from_lat],
-                to: [flow.to_lon, flow.to_lat]
-            }
-        }));
+        const flows = h100Data.supply_flows.map((flow, index) => {
+            // Track countries for labeling
+            this.tradeCountries.add(flow.from_country);
+            this.tradeCountries.add(flow.to_country);
+            
+            return {
+                from: flow.from_country,
+                to: flow.to_country,
+                value: flow.trade_value || (50 + (index * 5)), // Default values for animation if missing
+                commodity: flow.commodity,
+                company: flow.company,
+                coordinates: {
+                    from: [flow.from_lon, flow.from_lat],
+                    to: [flow.to_lon, flow.to_lat]
+                }
+            };
+        });
         
         console.log(`✅ Loaded ${flows.length} H100 supply chain flows`);
         this.createTradeFlowVisualizations(flows, 'h100');
@@ -537,12 +685,13 @@ class StaticTradeFlowManager {
             flowArray.push(routeObjects);
         });
         
-        // Initially hide H100 flows
+        // Initially show H100 flows, hide trade flows
         if (type === 'h100') {
-            this.setH100FlowsVisibility(false);
-            console.log(`🔥 H100 flows hidden initially (${flowArray.length} flows)`);
+            this.setH100FlowsVisibility(true);
+            console.log(`🔥 H100 flows visible initially (${flowArray.length} flows)`);
         } else {
-            console.log(`🌐 Trade flows visible initially (${flowArray.length} flows)`);
+            this.setTradeFlowsVisibility(false);
+            console.log(`🌐 Trade flows hidden initially (${flowArray.length} flows)`);
         }
         
         console.log(`✨ ${type} flow visualization complete! Total ${type} flows: ${flowArray.length}`);
@@ -688,7 +837,7 @@ class StaticTradeFlowManager {
     }
     
     getSpeedFromValue(value) {
-        return 0.001 + (value / 1000);
+        return 0.0001 + (value / 10000); // Made 10x slower
     }
 
     setTradeFlowsVisibility(visible) {
@@ -716,14 +865,58 @@ class StaticTradeFlowManager {
         this.isH100Mode = false;
         this.setH100FlowsVisibility(false);
         this.setTradeFlowsVisibility(true);
+        this.selectedFlowIndex = null;
+        this.selectedFlowType = null;
         console.log('🌐 Switched to trade flows mode');
+    }
+    
+    showSingleFlow(flowIndex, flowType) {
+        console.log(`🎯 Showing single flow: ${flowType} #${flowIndex}`);
+        this.selectedFlowIndex = flowIndex;
+        this.selectedFlowType = flowType;
+        
+        if (flowType === 'h100') {
+            // Hide all trade flows, show only selected H100 flow
+            this.setTradeFlowsVisibility(false);
+            this.setH100FlowsVisibility(false);
+            
+            if (flowIndex < this.h100Flows.length) {
+                const selectedFlow = this.h100Flows[flowIndex];
+                selectedFlow.routeLine.visible = true;
+                selectedFlow.particles.forEach(particle => particle.visible = true);
+            }
+        } else {
+            // Hide all H100 flows, show only selected trade flow
+            this.setH100FlowsVisibility(false);
+            this.setTradeFlowsVisibility(false);
+            
+            if (flowIndex < this.tradeFlows.length) {
+                const selectedFlow = this.tradeFlows[flowIndex];
+                selectedFlow.routeLine.visible = true;
+                selectedFlow.particles.forEach(particle => particle.visible = true);
+            }
+        }
+    }
+    
+    showAllFlows() {
+        console.log('🌐 Showing all flows for current mode');
+        this.selectedFlowIndex = null;
+        this.selectedFlowType = null;
+        
+        if (this.isH100Mode) {
+            this.setTradeFlowsVisibility(false);
+            this.setH100FlowsVisibility(true);
+        } else {
+            this.setH100FlowsVisibility(false);
+            this.setTradeFlowsVisibility(true);
+        }
     }
     
     updateAnimations() {
         if (this.animationFrameCount % 2 === 0) {
             this.animatedParticles.forEach(({ mesh, curve, progress, speed, type }) => {
-                // Only animate particles for the current mode
-                if ((this.isH100Mode && type === 'h100') || (!this.isH100Mode && type === 'trade')) {
+                // Only animate particles that are currently visible
+                if (mesh.visible) {
                     const newProgress = (progress + speed) % 1;
                     
                     const position = curve.getPoint(newProgress);
@@ -734,6 +927,10 @@ class StaticTradeFlowManager {
                 }
             });
         }
+    }
+    
+    getTradeCountries() {
+        return Array.from(this.tradeCountries);
     }
 }
 
