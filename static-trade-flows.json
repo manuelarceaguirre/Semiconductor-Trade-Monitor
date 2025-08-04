@@ -1,0 +1,111 @@
+{
+  "trade_flows": [
+    {
+      "from": {
+        "country": "Taiwan",
+        "coordinates": [
+          120.9675,
+          23.8103
+        ]
+      },
+      "to": {
+        "country": "China",
+        "coordinates": [
+          104.1954,
+          35.8617
+        ]
+      },
+      "value": 57428952636.51,
+      "commodity": "Electronic Integrated Circuits",
+      "hs_code": "8542",
+      "period": "2022",
+      "intensity": 1.0
+    },
+    {
+      "from": {
+        "country": "South Korea",
+        "coordinates": [
+          126.978,
+          37.5665
+        ]
+      },
+      "to": {
+        "country": "Taiwan",
+        "coordinates": [
+          120.9675,
+          23.8103
+        ]
+      },
+      "value": 11791673187.0,
+      "commodity": "Electronic Integrated Circuits",
+      "hs_code": "8542",
+      "period": "2022",
+      "intensity": 1.0
+    },
+    {
+      "from": {
+        "country": "Japan",
+        "coordinates": [
+          138.2529,
+          36.2048
+        ]
+      },
+      "to": {
+        "country": "Taiwan",
+        "coordinates": [
+          120.9675,
+          23.8103
+        ]
+      },
+      "value": 8510058998.469,
+      "commodity": "Electronic Integrated Circuits",
+      "hs_code": "8542",
+      "period": "2022",
+      "intensity": 1.0
+    }
+  ],
+  "country_stats": {
+    "Taiwan": {
+      "total_trade": 77730684821.979,
+      "export_value": 57428952636.51,
+      "import_value": 20301732185.469,
+      "coordinates": {
+        "lat": 23.8103,
+        "lng": 120.9675
+      }
+    },
+    "China": {
+      "total_trade": 57428952636.51,
+      "export_value": 0,
+      "import_value": 57428952636.51,
+      "coordinates": {
+        "lat": 35.8617,
+        "lng": 104.1954
+      }
+    },
+    "South Korea": {
+      "total_trade": 11791673187.0,
+      "export_value": 11791673187.0,
+      "import_value": 0,
+      "coordinates": {
+        "lat": 37.5665,
+        "lng": 126.978
+      }
+    },
+    "Japan": {
+      "total_trade": 8510058998.469,
+      "export_value": 8510058998.469,
+      "import_value": 0,
+      "coordinates": {
+        "lat": 36.2048,
+        "lng": 138.2529
+      }
+    }
+  },
+  "metadata": {
+    "total_flows": 3,
+    "period": "2022",
+    "min_value_filter": 100000000.0,
+    "last_updated": "2025-08-01T15:54:10.180213"
+  }
+}

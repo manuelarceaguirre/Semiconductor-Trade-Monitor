@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(python test_comtrade_api.py:*)",
+      "Bash(python3:*)",
+      "Bash(mysql:*)",
+      "Bash(sudo systemctl:*)",
+      "Bash(pip install:*)",
+      "Bash(/home/manuel/semiconductormonitor/semiconductor_venv/bin/python -m pip install mysql-connector-python sqlalchemy python-dotenv)",
+      "Bash(sudo mysql:*)",
+      "Bash(python:*)",
+      "Bash(pip3 install:*)",
+      "Bash(export PATH=$PATH:/home/manuel/.local/bin)",
+      "Bash(export:*)",
+      "Bash(curl:*)",
+      "Bash(find:*)",
+      "Bash(cp:*)",
+      "Bash(npm install:*)",
+      "Bash(pkill:*)",
+      "Bash(node server.js)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}

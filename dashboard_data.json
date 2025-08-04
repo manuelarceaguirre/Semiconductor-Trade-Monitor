@@ -1,0 +1,42 @@
+[
+  {
+    "period": "2023",
+    "reporter": "South Korea",
+    "partner": "Taiwan",
+    "commodity": "HBM/DRAM/SRAM ICs",
+    "hs6": "854232",
+    "value_usd": "2500000000.00",
+    "quantity": "1000000.000",
+    "unit": "kg"
+  },
+  {
+    "period": "2023",
+    "reporter": "Taiwan",
+    "partner": "United States",
+    "commodity": "GPU/AI Accelerators",
+    "hs6": "854231",
+    "value_usd": "1200000000.00",
+    "quantity": "500000.000",
+    "unit": "kg"
+  },
+  {
+    "period": "2023",
+    "reporter": "Netherlands",
+    "partner": "Taiwan",
+    "commodity": "Lithography Tools",
+    "hs6": "848620",
+    "value_usd": "800000000.00",
+    "quantity": "100.000",
+    "unit": "kg"
+  },
+  {
+    "period": "2022",
+    "reporter": "South Korea",
+    "partner": "Taiwan",
+    "commodity": "HBM/DRAM/SRAM ICs",
+    "hs6": "854232",
+    "value_usd": "2000000000.00",
+    "quantity": "800000.000",
+    "unit": "kg"
+  }
+]
