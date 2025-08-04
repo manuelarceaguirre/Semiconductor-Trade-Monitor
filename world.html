@@ -110,12 +110,33 @@
 			font-size: 9px;
 			margin-top: 3px;
 		}
+
+		#logo-placeholder {
+			position: fixed;
+			top: 20px;
+			right: 300px;
+			width: 200px;
+			height: 60px;
+			background: rgba(0, 0, 0, 0.6);
+			border: 2px dashed rgba(255, 255, 255, 0.3);
+			border-radius: 8px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: rgba(255, 255, 255, 0.7);
+			font-size: 12px;
+			font-style: italic;
+			z-index: 1000;
+		}
 		</style>
     </head>
     <body>
         <div id="dashboard">
             <div id="dashboard-header">Loading...</div>
             <div id="dashboard-content"></div>
+        </div>
+        <div id="logo-placeholder">
+            semianalysis your logo here
         </div>
         <script src="./globe.js"></script>
     </body>
