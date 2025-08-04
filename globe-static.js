@@ -237,6 +237,9 @@ document.addEventListener('DOMContentLoaded', () => {
     dashboardManager = new StaticDashboardManager();
     console.log('📊 Dashboard manager initialized');
     
+    // Initialize tier legend
+    initializeTierLegend();
+    
     // Force toggle initialization immediately
     setTimeout(() => {
         console.log('🔄 Force initializing toggle from DOMContentLoaded...');
@@ -251,6 +254,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 3000);
 });
+
+// Tier legend functionality
+function initializeTierLegend() {
+    const tierLegend = document.getElementById('tier-legend');
+    const tierLegendHeader = document.getElementById('tier-legend-header');
+    const tierLegendContent = document.getElementById('tier-legend-content');
+    const tierLegendToggle = document.getElementById('tier-legend-toggle');
+    
+    // Set initial max-height for smooth animation
+    tierLegendContent.style.maxHeight = tierLegendContent.scrollHeight + 'px';
+    
+    // Toggle legend visibility
+    tierLegendHeader.addEventListener('click', () => {
+        const isCollapsed = tierLegendContent.classList.contains('collapsed');
+        
+        if (isCollapsed) {
+            tierLegendContent.classList.remove('collapsed');
+            tierLegendToggle.classList.remove('collapsed');
+            tierLegendContent.style.maxHeight = tierLegendContent.scrollHeight + 'px';
+        } else {
+            tierLegendContent.classList.add('collapsed');
+            tierLegendToggle.classList.add('collapsed');
+            tierLegendContent.style.maxHeight = '0px';
+        }
+    });
+    
+    // Show/hide legend based on mode
+    updateTierLegendVisibility();
+}
+
+function updateTierLegendVisibility() {
+    const tierLegend = document.getElementById('tier-legend');
+    if (tierLegend) {
+        tierLegend.style.display = isH100Mode ? 'block' : 'none';
+    }
+}
 
 // Simple toggle functionality that works
 function initializeToggle() {
@@ -294,6 +333,7 @@ function initializeToggle() {
                 console.log('🌐 Switching to Trade Mode');
                 if (dashboardManager) dashboardManager.switchToTradeMode();
                 if (window.tradeFlowManager) window.tradeFlowManager.switchToTradeMode();
+                updateTierLegendVisibility();
                 
             } else {
                 // Switch to H100 mode
@@ -305,6 +345,7 @@ function initializeToggle() {
                 console.log('🔥 Switching to H100 Mode');
                 if (dashboardManager) dashboardManager.switchToH100Mode();
                 if (window.tradeFlowManager) window.tradeFlowManager.switchToH100Mode();
+                updateTierLegendVisibility();
             }
             
             if (e) e.preventDefault();

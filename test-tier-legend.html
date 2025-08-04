@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tier Legend Test</title>
+    <style>
+        body { background: #000; color: white; font-family: Arial; padding: 20px; }
+        .tier-item { display: flex; align-items: center; margin: 5px 0; }
+        .tier-color { width: 12px; height: 12px; margin-right: 8px; border-radius: 2px; }
+    </style>
+</head>
+<body>
+    <h2>H100 Supply Chain Tier Legend Preview</h2>
+    <div class="tier-item">
+        <div class="tier-color" style="background: #76b900;"></div>
+        <span><strong>Tier 0:</strong> Final Assembly (NVIDIA H100 SXM5 80GB)</span>
+    </div>
+    <div class="tier-item">
+        <div class="tier-color" style="background: #5a8a00;"></div>
+        <span><strong>Tier 1:</strong> Core Silicon & Packaging (GPU Die, HBM3, Interposer)</span>
+    </div>
+    <div class="tier-item">
+        <div class="tier-color" style="background: #4a7300;"></div>
+        <span><strong>Tier 2:</strong> Board-Level Components (VRM, Inductors, Capacitors)</span>
+    </div>
+    <div class="tier-item">
+        <div class="tier-color" style="background: #3d5c00;"></div>
+        <span><strong>Tier 3:</strong> PCB & Connectors (Copper Foil, Connectors, PCB)</span>
+    </div>
+    <div class="tier-item">
+        <div class="tier-color" style="background: #2e4500;"></div>
+        <span><strong>Tier 4:</strong> Mechanical & Thermal (Heat Spreaders, TIM)</span>
+    </div>
+    <div class="tier-item">
+        <div class="tier-color" style="background: #ff8800;"></div>
+        <span><strong>Tier 6:</strong> Materials & Chemicals (Silicon Wafers, Metals, Chemicals)</span>
+    </div>
+    <div class="tier-item">
+        <div class="tier-color" style="background: #ff0000;"></div>
+        <span><strong>Tier 8:</strong> Raw Materials (Crude Oil, Metal Ores, Minerals)</span>
+    </div>
+    
+    <p style="margin-top: 20px; font-size: 12px; color: #888;">
+        This legend will appear in the dashboard sidebar when H100 mode is active, 
+        helping users understand the supply chain hierarchy.
+    </p>
+</body>
+</html>

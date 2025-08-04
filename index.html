@@ -159,12 +159,123 @@
                 opacity: 1;
                 color: #76b900;
             }
+
+            #tier-legend {
+                border-top: 1px solid rgba(128, 128, 128, 0.2);
+                background: rgba(128, 128, 128, 0.05);
+            }
+
+            #tier-legend-header {
+                padding: 8px 12px;
+                color: white;
+                font-size: 9px;
+                opacity: 0.8;
+                cursor: pointer;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                transition: background-color 0.2s;
+            }
+
+            #tier-legend-header:hover {
+                background: rgba(128, 128, 128, 0.1);
+            }
+
+            #tier-legend-toggle {
+                font-size: 8px;
+                transition: transform 0.2s;
+            }
+
+            #tier-legend-toggle.collapsed {
+                transform: rotate(-90deg);
+            }
+
+            #tier-legend-content {
+                padding: 0 12px 8px 12px;
+                overflow: hidden;
+                transition: max-height 0.3s ease;
+            }
+
+            #tier-legend-content.collapsed {
+                max-height: 0;
+                padding: 0 12px;
+            }
+
+            .tier-item {
+                display: flex;
+                align-items: center;
+                margin-bottom: 4px;
+                font-size: 8px;
+                color: rgba(255, 255, 255, 0.8);
+                line-height: 1.2;
+            }
+
+            .tier-color {
+                width: 8px;
+                height: 8px;
+                border-radius: 2px;
+                margin-right: 6px;
+                flex-shrink: 0;
+            }
+
+            .tier-name {
+                font-weight: 500;
+                margin-right: 4px;
+                min-width: 35px;
+            }
+
+            .tier-desc {
+                opacity: 0.7;
+            }
         </style>
     </head>
     <body>
         <div id="dashboard">
             <div id="dashboard-header">Semiconductor Trade Flows • 2024</div>
             <div id="dashboard-content"></div>
+            <div id="tier-legend">
+                <div id="tier-legend-header">
+                    <span>Supply Chain Tiers</span>
+                    <span id="tier-legend-toggle">▼</span>
+                </div>
+                <div id="tier-legend-content">
+                    <div class="tier-item">
+                        <div class="tier-color" style="background: #76b900;"></div>
+                        <span class="tier-name">Tier 0:</span>
+                        <span class="tier-desc">Final Assembly</span>
+                    </div>
+                    <div class="tier-item">
+                        <div class="tier-color" style="background: #5a8a00;"></div>
+                        <span class="tier-name">Tier 1:</span>
+                        <span class="tier-desc">Core Silicon & Packaging</span>
+                    </div>
+                    <div class="tier-item">
+                        <div class="tier-color" style="background: #4a7300;"></div>
+                        <span class="tier-name">Tier 2:</span>
+                        <span class="tier-desc">Board-Level Components</span>
+                    </div>
+                    <div class="tier-item">
+                        <div class="tier-color" style="background: #3d5c00;"></div>
+                        <span class="tier-name">Tier 3:</span>
+                        <span class="tier-desc">PCB & Connectors</span>
+                    </div>
+                    <div class="tier-item">
+                        <div class="tier-color" style="background: #2e4500;"></div>
+                        <span class="tier-name">Tier 4:</span>
+                        <span class="tier-desc">Mechanical & Thermal</span>
+                    </div>
+                    <div class="tier-item">
+                        <div class="tier-color" style="background: #ff8800;"></div>
+                        <span class="tier-name">Tier 6:</span>
+                        <span class="tier-desc">Materials & Chemicals</span>
+                    </div>
+                    <div class="tier-item">
+                        <div class="tier-color" style="background: #ff0000;"></div>
+                        <span class="tier-name">Tier 8:</span>
+                        <span class="tier-desc">Raw Materials</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="toggle-container">
