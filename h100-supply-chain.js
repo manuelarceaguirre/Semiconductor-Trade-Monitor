@@ -1,11 +1,12 @@
 // H100 GPU Complete Supply Chain Data (from actual CSV analysis)
 window.H100_SUPPLY_CHAIN_DATA = {
     "metadata": {
-        "description": "NVIDIA H100 SXM5 80GB Supply Chain Flows",
-        "source": "Actual supply chain mapping based on ships_to_next relationships",
+        "description": "NVIDIA H100 SXM5 80GB Supply Chain Flows with Tier Classifications",
+        "source": "Actual supply chain mapping based on ships_to_next relationships with tier data from h100.csv",
         "total_flows": 57,
         "total_nodes": 65,
-        "date_analyzed": "2025-08-02"
+        "date_analyzed": "2025-08-04",
+        "tier_structure": "8 tiers from Tier 0 (Final Assembly) to Tier 8 (Raw Materials)"
     },
     "supply_flows": [
         {
@@ -18,7 +19,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 22.6273,
             "to_lon": 120.3014,
             "commodity": "Renesas ISL99390",
-            "company": "Renesas Electronics"
+            "company": "Renesas Electronics",
+            "tier": "Tier 2: Board-Level Active Components"
         },
         {
             "from_city": "Kumamoto",
@@ -30,7 +32,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 2.913,
             "to_lon": 101.469,
             "commodity": "110 nm BCDMOS die",
-            "company": "Renesas Electronics"
+            "company": "Renesas Electronics",
+            "tier": "Tier 2: Board-Level Active Components"
         },
         {
             "from_city": "Nishigō",
@@ -42,7 +45,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 32.708,
             "to_lon": 130.636,
             "commodity": "200 mm polished wafer",
-            "company": "Shin-Etsu Handotai"
+            "company": "Shin-Etsu Handotai",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Spruce Pine",
@@ -54,7 +58,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 37.13,
             "to_lon": 140.35,
             "commodity": "HPQ ore",
-            "company": "The Quartz Corp"
+            "company": "The Quartz Corp",
+            "tier": "Tier 8: Raw Materials"
         },
         {
             "from_city": "Ulsan",
@@ -66,7 +71,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 2.913,
             "to_lon": 101.469,
             "commodity": "C194 CuNiSi strip",
-            "company": "Poongsan"
+            "company": "Poongsan",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Antofagasta",
@@ -78,7 +84,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 35.54,
             "to_lon": 129.32,
             "commodity": "99.99 % Cu cathode",
-            "company": "BHP"
+            "company": "BHP",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Antofagasta",
@@ -90,7 +97,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": -23.6509,
             "to_lon": -70.3975,
             "commodity": "Run-of-mine ore",
-            "company": "BHP"
+            "company": "BHP",
+            "tier": "Tier 8: Raw Materials"
         },
         {
             "from_city": "Suzhou",
@@ -102,7 +110,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 2.913,
             "to_lon": 101.469,
             "commodity": "EME-G700 epoxy",
-            "company": "Sumitomo Bakelite"
+            "company": "Sumitomo Bakelite",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Al-Jubail",
@@ -114,7 +123,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 31.303,
             "to_lon": 120.587,
             "commodity": "BPA monomer",
-            "company": "SABIC"
+            "company": "SABIC",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Al-Ahsa",
@@ -126,7 +136,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 27.039,
             "to_lon": 49.646,
             "commodity": "Sweet crude oil",
-            "company": "Saudi Aramco"
+            "company": "Saudi Aramco",
+            "tier": "Tier 8: Raw Materials"
         },
         {
             "from_city": "Puno",
@@ -138,7 +149,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 2.913,
             "to_lon": 101.469,
             "commodity": "Tin (Sn) finish",
-            "company": "Minsur"
+            "company": "Minsur",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Yokkaichi",
@@ -150,7 +162,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 35.365,
             "to_lon": 136.602,
             "commodity": "Megtron 6 laminate",
-            "company": "Panasonic Industry"
+            "company": "Panasonic Industry",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Aiken",
@@ -162,7 +175,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 34.958,
             "to_lon": 136.613,
             "commodity": "E-glass cloth",
-            "company": "Owens Corning"
+            "company": "Owens Corning",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Spruce Pine",
@@ -174,7 +188,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 33.561,
             "to_lon": -81.721,
             "commodity": "Quartz sand",
-            "company": "The Quartz Corp"
+            "company": "The Quartz Corp",
+            "tier": "Tier 8: Raw Materials"
         },
         {
             "from_city": "Ageo",
@@ -186,7 +201,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 35.365,
             "to_lon": 136.602,
             "commodity": "18 µm ED foil",
-            "company": "Mitsui Mining & Smelting"
+            "company": "Mitsui Mining & Smelting",
+            "tier": "Tier 3: PCB & Connector"
         },
         {
             "from_city": "Sudbury",
@@ -198,7 +214,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 35.365,
             "to_lon": 136.602,
             "commodity": "Electroless Ni plating",
-            "company": "Glencore"
+            "company": "Glencore",
+            "tier": "Tier 3: PCB & Connector"
         },
         {
             "from_city": "Elko",
@@ -210,7 +227,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 35.365,
             "to_lon": 136.602,
             "commodity": "Immersion Au plating",
-            "company": "Barrick Gold"
+            "company": "Barrick Gold",
+            "tier": "Tier 3: PCB & Connector"
         },
         {
             "from_city": "Nikaho",
@@ -222,7 +240,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 22.6273,
             "to_lon": 120.3014,
             "commodity": "0.33 uH Shielded Power Inductors",
-            "company": "TDK Corporation"
+            "company": "TDK Corporation",
+            "tier": "Tier 2: Board-Level Active Components"
         },
         {
             "from_city": "Murayama",
@@ -234,7 +253,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 39.3303,
             "to_lon": 139.915,
             "commodity": "MnZn Ferrite Powder",
-            "company": "JFE Mineral & Alloy"
+            "company": "JFE Mineral & Alloy",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Groote Eylandt",
@@ -246,7 +266,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 38.728,
             "to_lon": 140.39,
             "commodity": "High-grade Mn ore",
-            "company": "South32"
+            "company": "South32",
+            "tier": "Tier 8: Raw Materials"
         },
         {
             "from_city": "Kotzebue",
@@ -258,7 +279,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 38.728,
             "to_lon": 140.39,
             "commodity": "Sphalerite concentrate",
-            "company": "Teck Resources"
+            "company": "Teck Resources",
+            "tier": "Tier 8: Raw Materials"
         },
         {
             "from_city": "Inabe",
@@ -270,7 +292,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 39.3303,
             "to_lon": 139.915,
             "commodity": "Ø0.10 mm E-Cu Magnet Wire",
-            "company": "Furukawa Electric"
+            "company": "Furukawa Electric",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Calama",
@@ -282,7 +305,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 35.1,
             "to_lon": 136.6,
             "commodity": "99.99 % Cu cathode",
-            "company": "Freeport-McMoRan"
+            "company": "Freeport-McMoRan",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Echizen",
@@ -294,7 +318,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 22.6273,
             "to_lon": 120.3014,
             "commodity": "0603 22 µF X6S MLCCs",
-            "company": "Murata Manufacturing"
+            "company": "Murata Manufacturing",
+            "tier": "Tier 2: Board-Level Active Components"
         },
         {
             "from_city": "Niigata",
@@ -306,7 +331,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 35.999,
             "to_lon": 136.188,
             "commodity": "BaTiO₃ ultrafine powder",
-            "company": "Nippon Chemical Industrial"
+            "company": "Nippon Chemical Industrial",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Carlin",
@@ -318,7 +344,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 37.916,
             "to_lon": 139.04,
             "commodity": "Baryte (BaSO₄) ore",
-            "company": "Excalibar Minerals"
+            "company": "Excalibar Minerals",
+            "tier": "Tier 8: Raw Materials"
         },
         {
             "from_city": "Geraldton",
@@ -330,7 +357,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 37.916,
             "to_lon": 139.04,
             "commodity": "TiO₂-rich rutile",
-            "company": "Iluka Resources"
+            "company": "Iluka Resources",
+            "tier": "Tier 8: Raw Materials"
         },
         {
             "from_city": "Oita",
@@ -342,7 +370,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 35.999,
             "to_lon": 136.188,
             "commodity": "Ni Electrode Screen-Print Paste",
-            "company": "JX Metals"
+            "company": "JX Metals",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Norilsk",
@@ -354,7 +383,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 33.25,
             "to_lon": 131.7,
             "commodity": "High-Ni matte",
-            "company": "Nornickel"
+            "company": "Nornickel",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Carson City",
@@ -366,7 +396,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 35.365,
             "to_lon": 136.602,
             "commodity": "PSR-4000 AUS5 LPI Green",
-            "company": "Taiyo Ink Mfg."
+            "company": "Taiyo Ink Mfg.",
+            "tier": "Tier 3: PCB & Connector"
         },
         {
             "from_city": "Freeport",
@@ -378,7 +409,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 39.163,
             "to_lon": -119.767,
             "commodity": "Novolac-type epoxy",
-            "company": "Dow Chemical"
+            "company": "Dow Chemical",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Baytown",
@@ -390,7 +422,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 28.96,
             "to_lon": -95.36,
             "commodity": "Polymer-grade propylene",
-            "company": "ExxonMobil"
+            "company": "ExxonMobil",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Midland",
@@ -402,7 +435,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 29.735,
             "to_lon": -94.957,
             "commodity": "West Texas Light Sweet",
-            "company": "Pioneer Natural Resources"
+            "company": "Pioneer Natural Resources",
+            "tier": "Tier 8: Raw Materials"
         },
         {
             "from_city": "Berlin",
@@ -414,7 +448,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 35.365,
             "to_lon": 136.602,
             "commodity": "Acid Cu Plating Solution",
-            "company": "Atotech"
+            "company": "Atotech",
+            "tier": "Tier 3: PCB & Connector"
         },
         {
             "from_city": "Hamburg",
@@ -426,7 +461,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 52.513,
             "to_lon": 13.392,
             "commodity": "CuSO₄ electrolyte grade",
-            "company": "Aurubis"
+            "company": "Aurubis",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Lubin",
@@ -438,7 +474,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 53.55,
             "to_lon": 9.99,
             "commodity": "Lubin concentrate",
-            "company": "KGHM Polska Miedź"
+            "company": "KGHM Polska Miedź",
+            "tier": "Tier 8: Raw Materials"
         },
         {
             "from_city": "Fukaya",
@@ -450,7 +487,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 35.3697,
             "to_lon": 136.612,
             "commodity": "ABF GX-92 Film 25 µm",
-            "company": "Ajinomoto Fine-Techno"
+            "company": "Ajinomoto Fine-Techno",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Higashine",
@@ -462,7 +500,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 35.3697,
             "to_lon": 136.612,
             "commodity": "SAC305 C4 Bumps Ø95 µm",
-            "company": "Senju Metal Industry"
+            "company": "Senju Metal Industry",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Taoyuan",
@@ -474,7 +513,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 35.3697,
             "to_lon": 136.612,
             "commodity": "Loctite UF1173 Capillary Underfill",
-            "company": "Henkel Electronic Materials"
+            "company": "Henkel Electronic Materials",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Utica",
@@ -486,7 +526,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 36.742,
             "to_lon": 138.369,
             "commodity": "Indium 97 / Ag 3 Foil",
-            "company": "Indium Corporation"
+            "company": "Indium Corporation",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Sapporo",
@@ -498,7 +539,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 43.107,
             "to_lon": -75.252,
             "commodity": "Indium-bearing Sulfide Ore",
-            "company": "Dowa Holdings"
+            "company": "Dowa Holdings",
+            "tier": "Tier 8: Raw Materials"
         },
         {
             "from_city": "Kanra",
@@ -510,7 +552,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 36.742,
             "to_lon": 138.369,
             "commodity": "Sarcon XR-m Graphite Pad",
-            "company": "Fujipoly"
+            "company": "Fujipoly",
+            "tier": "Tier 6: Upstream Materials & Chemicals"
         },
         {
             "from_city": "Hitachinaka",
@@ -522,7 +565,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 22.6273,
             "to_lon": 120.3014,
             "commodity": "Renesas RAA229131",
-            "company": "Renesas Electronics"
+            "company": "Renesas Electronics",
+            "tier": "Tier 2: Board-Level Active Components"
         },
         {
             "from_city": "Nagaokakyo",
@@ -534,7 +578,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 22.6273,
             "to_lon": 120.3014,
             "commodity": "330 µF 9 mΩ Polymer Caps",
-            "company": "Panasonic Electronic Components"
+            "company": "Panasonic Electronic Components",
+            "tier": "Tier 2: Board-Level Active Components"
         },
         {
             "from_city": "Shenzhen",
@@ -546,7 +591,8 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 35.365,
             "to_lon": 136.602,
             "commodity": "988-pad LGA Socket",
-            "company": "Foxconn Interconnect Tech."
+            "company": "Foxconn Interconnect Tech.",
+            "tier": "Tier 3: PCB & Connector"
         },
         {
             "from_city": "Chachoengsao",
@@ -558,10 +604,11 @@ window.H100_SUPPLY_CHAIN_DATA = {
             "to_lat": 35.365,
             "to_lon": 136.602,
             "commodity": "Microchip AT24C04 + PMBus Temp",
-            "company": "Microchip Technology"
+            "company": "Microchip Technology",
+            "tier": "Tier 3: PCB & Connector"
         }
     ],
     "total_value": 32540,
-    "data_source": "Complete H100 GPU Supply Chain Analysis - 57 Actual Supply Chain Flows from CSV",
-    "timestamp": "2025-08-02T00:00:00Z"
+    "data_source": "Complete H100 GPU Supply Chain Analysis - 57 Actual Supply Chain Flows from CSV with Tier Classifications",
+    "timestamp": "2025-08-04T00:00:00Z"
 };

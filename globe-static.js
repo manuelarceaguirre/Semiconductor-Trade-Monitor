@@ -141,6 +141,17 @@ class StaticDashboardManager {
     }
     
     determineTier(flow) {
+        // Use the actual tier from the H100 data if available
+        if (flow.tier) {
+            // Extract just the tier number and category for display
+            const tierMatch = flow.tier.match(/^(Tier \d+):/);
+            if (tierMatch) {
+                return tierMatch[1];
+            }
+            return flow.tier;
+        }
+        
+        // Fallback to value-based logic for data without tier info
         const value = flow.trade_value;
         const commodity = flow.commodity.toLowerCase();
         
